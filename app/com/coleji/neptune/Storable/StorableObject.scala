@@ -34,7 +34,7 @@ abstract class StorableObject[T <: StorableClass](implicit @transient manifest: 
 	val entityName: String
 	val fields: FieldsObject
 
-	val useRuntimeFieldnamesForJson = false
+	val useRuntimeFieldnamesForJson = true
 
 	implicit def storableJsonWrites = new Writes[T] {
 		override def writes(o: T): JsValue = o.asJsValue

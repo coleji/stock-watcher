@@ -34,7 +34,7 @@ class PermissionsAuthority private[Core] (
 	println("AllowableUserTypes: ", systemParams.allowableUserTypes)
 	println("PA Debug: " + systemParams.isDebugMode)
 
-	private lazy val rootRC: RootRequestCache = RootRequestCache.create(customParams, dbGateway, redisPool)
+	lazy val rootRC: RootRequestCache = RootRequestCache.create(customParams, dbGateway, redisPool)
 	// TODO: should this ever be used except by actual root-originated reqs e.g. crons?
 	// e.g. there are some staff/member accessible functions that ultimately use this (even if they cant access rootPB directly)
 	private lazy val rootCB = new RedisBroker(redisPool)
@@ -46,14 +46,7 @@ class PermissionsAuthority private[Core] (
 	def instanceName: String = dbGateway.mainSchemaName
 
 	def now(): LocalDateTime = {
-		val q = new PreparedQueryForSelect[LocalDateTime](Set(RootRequestCache)) {
-			override val params: List[String] = List()
-
-			override def mapResultSetRowToCaseObject(rsw: ResultSetWrapper): LocalDateTime = rsw.getLocalDateTime(1)
-
-			override def getQuery: String = "select util_pkg.get_sysdate from dual"
-		}
-		rootRC.executePreparedQueryForSelect(q).head
+		LocalDateTime.now()
 	}
 
 	def currentSeason(): Int = {

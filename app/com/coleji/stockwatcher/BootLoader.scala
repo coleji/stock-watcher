@@ -6,26 +6,32 @@ import play.api.inject.ApplicationLifecycle
 
 import javax.inject.Inject
 
-class BootLoader @Inject()(lifecycle: ApplicationLifecycle) extends ServerBootLoaderLive {
-  private val PROPERTY_NAMES = BootLoader.PROPERTY_NAMES
+class BootLoader @Inject()(lifecycle: ApplicationLifecycle, taskDispatcher: TaskDispatcher) extends ServerBootLoaderLive {
+	private val PROPERTY_NAMES = BootLoader.PROPERTY_NAMES
 
-  val requiredProperties = List(
-    BootLoader.PROPERTY_NAMES.DB_DRIVER
-  )
+	val requiredProperties = List(
+		BootLoader.PROPERTY_NAMES.DB_DRIVER
+	)
 
-  val paPostBoot: PropertiesWrapper => Unit = pw => {
+	val paPostBoot: PropertiesWrapper => Unit = pw => {
 
-  }
+	}
 
-  println("GIT HASH: $$GITHUB_SHA$$")
+	println("GIT HASH: $$GITHUB_SHA$$")
 
-  this.init(lifecycle, BootLoader.ENTITY_PACKAGE_PATH, List.empty,  requiredProperties, paPostBoot)
+	val PA = this.init(lifecycle, BootLoader.ENTITY_PACKAGE_PATH, List.empty,  requiredProperties, paPostBoot)
+	println("about to start task thread")
+	val taskThread = new Thread(() => {
+		taskDispatcher.start(PA)
+	})
+	taskThread.setName("Task Runner")
+	taskThread.start()
 }
 
 object BootLoader {
-  val ENTITY_PACKAGE_PATH = "com.coleji.stockwatcher.entity.entitydefinitions"
+	val ENTITY_PACKAGE_PATH = "com.coleji.stockwatcher.entity.entitydefinitions"
 
-  object PROPERTY_NAMES {
-   val DB_DRIVER = "DBDriver"
-  }
+	object PROPERTY_NAMES {
+		val DB_DRIVER = "DBDriver"
+	}
 }

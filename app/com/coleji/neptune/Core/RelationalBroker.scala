@@ -150,7 +150,15 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 		}
 	}
 
-	override protected def getObjectsByFiltersImplementation[T <: StorableClass](obj: StorableObject[T], filters: List[Filter], fieldShutter: Set[DatabaseField[_]], fetchSize: Int): List[T] = {
+	override protected def getObjectsByFiltersImplementation[T <: StorableClass](
+		obj: StorableObject[T],
+		filters: List[Filter],
+		fieldShutter: Set[DatabaseField[_]],
+		limit: Option[Int],
+		orderBy: Option[DatabaseField[_]],
+		orderByDesc: Boolean,
+		fetchSize: Int
+	): List[T] = {
 		// Filter("") means a filter that can't possibly match anything.
 		// E.g. if you try to make a int in list filter and pass in an empty list, it will generate a short circuit filter
 		// If there are any short circuit filters, don't bother talking to the database
@@ -168,6 +176,12 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 				val overallFilter = Filter.and(filters.map(f => f))
 				sb.append(" WHERE " + overallFilter.preparedSQL)
 				params = overallFilter.params
+			}
+			orderBy match {
+				case Some(f) => sb.append(" ORDER BY " + f.persistenceFieldName + (if (orderByDesc) " DESC" else " ASC"))
+			}
+			limit match {
+				case Some(l) => sb.append(" LIMIT " + l)
 			}
 			val rows: List[ProtoStorable] = getProtoStorablesFromSelect(
 				sb.toString(),

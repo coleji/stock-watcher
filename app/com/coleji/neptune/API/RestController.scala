@@ -10,6 +10,6 @@ abstract class RestController[S <: StorableClass](obj: StorableObject[S]) {
 	}
 
 	protected def getByFilters(rc: UnlockedRequestCache, filters: List[Filter], fieldShutter: Set[DatabaseField[_]]): List[S] = {
-		rc.getObjectsByFilters(obj, filters, fieldShutter)
+		rc.getObjectsByFilters(obj, filters, fieldShutter, None, None, false)
 	}
 }

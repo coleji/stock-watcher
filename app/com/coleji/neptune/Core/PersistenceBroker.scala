@@ -63,9 +63,9 @@ abstract class PersistenceBroker private[Core](dbConnection: DatabaseGateway, pr
 		countObjectsByFiltersImplementation(obj, filters)
 	}
 
-	final def getObjectsByFilters[T <: StorableClass](obj: StorableObject[T], filters: List[Filter], fieldShutter: Set[DatabaseField[_]], fetchSize: Int = 50): List[T] = {
+	final def getObjectsByFilters[T <: StorableClass](obj: StorableObject[T], filters: List[Filter], fieldShutter: Set[DatabaseField[_]], limit: Option[Int], orderBy: Option[DatabaseField[_]], orderByDesc: Boolean, fetchSize: Int = 50): List[T] = {
 		if (preparedQueriesOnly) throw new UnauthorizedAccessException("Server is in Prepared Queries Only mode.")
-		else getObjectsByFiltersImplementation(obj, filters, fieldShutter, fetchSize)
+		else getObjectsByFiltersImplementation(obj, filters, fieldShutter, limit, orderBy, orderByDesc, fetchSize)
 	}
 
 	final def getAllObjectsOfClass[T <: StorableClass](obj: StorableObject[T], fieldShutter: Set[DatabaseField[_]], fetchSize: Int = 50): List[T] = {
@@ -115,7 +115,7 @@ abstract class PersistenceBroker private[Core](dbConnection: DatabaseGateway, pr
 
 	protected def getObjectsByIdsImplementation[T <: StorableClass](obj: StorableObject[T], ids: List[Int], fieldShutter: Set[DatabaseField[_]], fetchSize: Int): List[T]
 
-	protected def getObjectsByFiltersImplementation[T <: StorableClass](obj: StorableObject[T], filters: List[Filter], fieldShutter: Set[DatabaseField[_]], fetchSize: Int): List[T]
+	protected def getObjectsByFiltersImplementation[T <: StorableClass](obj: StorableObject[T], filters: List[Filter], fieldShutter: Set[DatabaseField[_]], limit: Option[Int], orderBy: Option[DatabaseField[_]], orderByDesc: Boolean, fetchSize: Int): List[T]
 
 	protected def countObjectsByFiltersImplementation[T <: StorableClass](obj: StorableObject[T], filters: List[Filter]): Int
 

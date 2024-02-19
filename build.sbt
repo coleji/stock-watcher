@@ -55,3 +55,6 @@ libraryDependencies += "org.apache.pdfbox" % "fontbox" % "3.0.0" // rel 18 aug 2
 
 // https://mvnrepository.com/artifact/org.apache.pdfbox/pdfbox
 libraryDependencies += "org.apache.pdfbox" % "pdfbox" % "3.0.0" // rel 18 aug 2023
+
+// https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5
+libraryDependencies += "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1"
