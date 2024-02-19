@@ -88,7 +88,7 @@ object ServerBootLoader {
 					readOnlyDatabase = doReadOnlyDatabase,
 					allowableUserTypes = enabledAuthMechanisms,
 					preparedQueriesOnly = preparedQueriesOnly,
-					persistenceSystem = PermissionsAuthority.PERSISTENCE_SYSTEM_ORACLE,
+					persistenceSystem = PermissionsAuthority.PERSISTENCE_SYSTEM_MYSQL,
 					emailCrashesTo = paramFile.getOptionalString("EmailCrashesTo").getOrElse("jon@community-boating.org"),
 					dbDriver = dbDriver
 				),

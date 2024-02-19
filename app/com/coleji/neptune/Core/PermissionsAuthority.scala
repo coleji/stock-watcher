@@ -319,7 +319,7 @@ object PermissionsAuthority {
 
 	def isBooted: Boolean = paWrapper.isInitialized
 	implicit def PA: PermissionsAuthority = paWrapper.get
-	implicit val persistenceSystem = PERSISTENCE_SYSTEM_ORACLE
+	implicit val persistenceSystem = PERSISTENCE_SYSTEM_MYSQL
 
 	private[Core] def setPA(pa: PermissionsAuthority): PermissionsAuthority = paWrapper.set(pa)
 

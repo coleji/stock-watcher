@@ -1,5 +1,5 @@
 import com.google.inject.AbstractModule
-import org.sailcbi.APIServer.Server.BootLoader
+import com.coleji.stockwatcher.BootLoader
 
 /**
   * This class is a Guice module that tells Guice how to bind several

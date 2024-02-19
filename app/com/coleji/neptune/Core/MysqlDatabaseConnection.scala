@@ -6,18 +6,18 @@ import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 
 object MysqlDatabaseConnection {
 	private[Core] def apply(confFileLocation: String): DatabaseGateway = {
-		val pw = new PropertiesWrapper(confFileLocation, List("host", "port", "username", "password", "schema", "temptableschema", "temptableusername", "temptablepassword"))
+		val pw = new PropertiesWrapper(confFileLocation, List("host", "port", "username", "password", "schema"))
 
 		Class.forName("com.mysql.cj.jdbc.Driver")
 
 		val mainSchemaName = pw.getString("schema")
-		val tempSchemaName = pw.getString("temptableschema")
+		val tempSchemaName = pw.getOptionalString("temptableschema").getOrElse(mainSchemaName)
 		val host = pw.getString("host")
 		val port = pw.getString("port")
 		val username = pw.getString("username")
 		val password = pw.getString("password")
-		val tempUsername = pw.getString("temptableusername")
-		val tempPassword = pw.getString("temptablepassword")
+		val tempUsername = pw.getOptionalString("temptableusername").getOrElse(username)
+		val tempPassword = pw.getOptionalString("temptablepassword").getOrElse(password)
 		val poolSize = pw.getOptionalString("maxPoolSize").map(_.toInt).getOrElse(2)
 		val poolSizeTemp = pw.getOptionalString("maxPoolSizeTemp").map(_.toInt).getOrElse(1)
 

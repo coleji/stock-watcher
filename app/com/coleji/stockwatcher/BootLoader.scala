@@ -1,4 +1,4 @@
-package org.sailcbi.APIServer.Server
+package com.coleji.stockwatcher
 
 import com.coleji.neptune.Core.Boot.ServerBootLoaderLive
 import com.coleji.neptune.Util.PropertiesWrapper
