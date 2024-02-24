@@ -303,10 +303,14 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 				if (batchParams.get.length > 100) throw new Exception ("Aborting before inserting over 100 records in batch; implement batch pagination")
 				batchParams.get.foreach(row => {
 					row.zipWithIndex.foreach(t => t._1.set(ps)(t._2+1))
-					println("Parameterized with " + row)
+//					println("Parameterized with " + row)
 					ps.addBatch()
 				})
+				println("starting batch")
+				val start = System.currentTimeMillis()
 				ps.executeBatch()
+				val end = System.currentTimeMillis()
+				println("finished batch of " + batchParams.get.length + " rows in ms: " + (end-start))
 				// Cant return a PK when there are multiple.  Could someday extend this to return a list of PKs
 				None
 			} else {
@@ -424,13 +428,33 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			if (i.unsetRequiredFields.nonEmpty) {
 				throw new Exception("Attempted to insert new StorableClass instance, but not all fields are set: " + i.unsetRequiredFields.map(_.persistenceFieldName).mkString(", "))
 			} else {
-				insertObject(i)
+				insertObjects(List(i))
 			}
 		}
 	}
 
+	override protected def batchInsertObjectsToDatabaseImplementation(is: List[StorableClass]): Unit = {
+		is.foreach(i => {
+			i.companion.init()
+			if (i.hasID) {
+				throw new Exception("Found an object in a batch insert list that already has a PK")
+			}
+			if (i.unsetRequiredFields.nonEmpty) {
+				throw new Exception("Attempted to insert new StorableClass instance, but not all fields are set: " + i.unsetRequiredFields.map(_.persistenceFieldName).mkString(", "))
+			}
+		})
+		val batched: List[List[StorableClass]] = is.grouped(100).toList
+		batched.foreach(insertObjects)
+	}
 
-	private def insertObject(i: StorableClass): Unit = {
+	private def insertObjects(is: List[StorableClass]): Unit = {
+		val className = is.head.getClass.getCanonicalName
+		is.foreach(i => {
+			if (i.getClass.getCanonicalName != className) {
+				throw new Exception("Aborting inserting a heterogeneneous list of storables")
+			}
+		})
+		val i = is.head
 		println("inserting woooo")
 
 		def getFieldValues(vm: Map[String, FieldValue[_]]): List[FieldValue[_]] =
@@ -438,23 +462,23 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 					.filter(fv => fv.isSet && fv.persistenceFieldName != i.companion.primaryKey.persistenceFieldName)
 					.toList
 
-		val fieldValues: List[FieldValue[_]] = {
+		val allFieldValues: List[List[FieldValue[_]]] = is.map(i => {
 			getFieldValues(i.intValueMap) ++
-			getFieldValues(i.nullableIntValueMap) ++
-			getFieldValues(i.stringValueMap) ++
-			getFieldValues(i.nullableStringValueMap) ++
-			getFieldValues(i.dateValueMap) ++
-			getFieldValues(i.nullableDateValueMap) ++
-			getFieldValues(i.dateTimeValueMap) ++
-			getFieldValues(i.nullableDateTimeValueMap) ++
-			getFieldValues(i.booleanValueMap) ++
-			getFieldValues(i.nullableBooleanValueMap) ++
-			getFieldValues(i.doubleValueMap) ++
-			getFieldValues(i.nullableDoubleValueMap)
-		}
+				getFieldValues(i.nullableIntValueMap) ++
+				getFieldValues(i.stringValueMap) ++
+				getFieldValues(i.nullableStringValueMap) ++
+				getFieldValues(i.dateValueMap) ++
+				getFieldValues(i.nullableDateValueMap) ++
+				getFieldValues(i.dateTimeValueMap) ++
+				getFieldValues(i.nullableDateTimeValueMap) ++
+				getFieldValues(i.booleanValueMap) ++
+				getFieldValues(i.nullableBooleanValueMap) ++
+				getFieldValues(i.doubleValueMap) ++
+				getFieldValues(i.nullableDoubleValueMap)
+		})
 
-		val startingColumns = fieldValues.map(fv => fv.persistenceFieldName)
-		val startingValues = fieldValues.map(fv => fv.getPersistenceLiteral._1)
+		val startingColumns = allFieldValues.head.map(fv => fv.persistenceFieldName)
+		val startingValues = allFieldValues.head.map(fv => fv.getPersistenceLiteral._1)
 
 		val columns = {
 			if (i.desiredPrimaryKey.isInitialized) i.getPrimaryKeyFieldValue.persistenceFieldName :: startingColumns
@@ -473,10 +497,18 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 		sb.append(values.mkString(", "))
 		sb.append(")")
 		println(sb.toString())
-		val params = Some(fieldValues.flatMap(fv => fv.getPersistenceLiteral._2).map(PreparedString))
-		executeSQLForInsert(sb.toString(), Some(i.companion.primaryKey.persistenceFieldName), false, params) match {
-			case Some(s: String) => i.initializePrimaryKeyValue(s.toInt)
-			case None =>
+		if (is.size > 1) {
+			val batchParams = Some(allFieldValues.map(rfv => rfv.flatMap(fv => fv.getPersistenceLiteral._2).map(PreparedString)))
+			executeSQLForInsert(sb.toString(), None, false, None, batchParams) match {
+				case Some(s: String) => i.initializePrimaryKeyValue(s.toInt)
+				case None =>
+			}
+		} else {
+			val params = Some(allFieldValues.head.flatMap(fv => fv.getPersistenceLiteral._2).map(PreparedString))
+			executeSQLForInsert(sb.toString(), Some(i.companion.primaryKey.persistenceFieldName), false, params) match {
+				case Some(s: String) => i.initializePrimaryKeyValue(s.toInt)
+				case None =>
+			}
 		}
 	}
 

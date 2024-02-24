@@ -3,7 +3,7 @@ package com.coleji.neptune.Storable
 /**
  * For use with Prepared Statements only. Do not inject these directly into SQL!
  */
-object GetSQLLiteralPrepared {
+object GetSQLLiteralForPrepared {
 	def apply(s: String): String = if (s == "") null else s
 
 	def apply(s: Option[String]): String = s match {

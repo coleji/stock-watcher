@@ -154,9 +154,9 @@ abstract class StorableObject[T <: StorableClass](implicit @transient manifest: 
 
 	// Make sure all the lazy things are actually set
 	def init(): Unit = {
-		val p = new Profiler
+//		val p = new Profiler
 		fieldList
-		p.lap("fieldl ist done")
+//		p.lap("fieldl ist done")
 	}
 
 	def hasValueList: Boolean = {

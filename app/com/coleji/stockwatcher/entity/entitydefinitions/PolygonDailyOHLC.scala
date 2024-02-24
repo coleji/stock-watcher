@@ -4,6 +4,8 @@ import com.coleji.neptune.Storable.FieldValues._
 import com.coleji.neptune.Storable.Fields._
 import com.coleji.neptune.Storable._
 
+import java.time.LocalDate
+
 class PolygonDailyOHLC extends StorableClass(PolygonDailyOHLC) {
 	override object values extends ValuesObject {
 		val id = new IntFieldValue(self, PolygonDailyOHLC.fields.id)
@@ -14,8 +16,8 @@ class PolygonDailyOHLC extends StorableClass(PolygonDailyOHLC) {
 		val high = new DoubleFieldValue(self, PolygonDailyOHLC.fields.high)
 		val low = new DoubleFieldValue(self, PolygonDailyOHLC.fields.low)
 		val volume = new DoubleFieldValue(self, PolygonDailyOHLC.fields.volume)
-		val numberTrans = new IntFieldValue(self, PolygonDailyOHLC.fields.numberTrans)
-		val volumeWeightedAverage = new DoubleFieldValue(self, PolygonDailyOHLC.fields.volumeWeightedAverage)
+		val numberTrans = new NullableIntFieldValue(self, PolygonDailyOHLC.fields.numberTrans)
+		val volumeWeightedAverage = new NullableDoubleFieldValue(self, PolygonDailyOHLC.fields.volumeWeightedAverage)
 	}
 }
 
@@ -31,9 +33,23 @@ object PolygonDailyOHLC extends StorableObject[PolygonDailyOHLC] {
 		val high = new DoubleDatabaseField(self, "high")
 		val low = new DoubleDatabaseField(self, "low")
 		val volume = new DoubleDatabaseField(self, "volume")
-		val numberTrans = new IntDatabaseField(self, "number_trans")
-		val volumeWeightedAverage = new DoubleDatabaseField(self, "volume_weighted_avg")
+		val numberTrans = new NullableIntDatabaseField(self, "number_trans")
+		val volumeWeightedAverage = new NullableDoubleDatabaseField(self, "volume_weighted_avg")
 	}
 
 	def primaryKey: IntDatabaseField = fields.id
+
+	def apply(marketDate: LocalDate, ticker: String, open: Double, close: Double, high: Double, low: Double, volume: Double, numberTrans: Option[Int], volumeWeightedAverage: Option[Double]): PolygonDailyOHLC = {
+		val ret = new PolygonDailyOHLC
+		ret.values.marketDate.update(marketDate)
+		ret.values.ticker.update(ticker)
+		ret.values.open.update(open)
+		ret.values.close.update(close)
+		ret.values.high.update(high)
+		ret.values.low.update(low)
+		ret.values.volume.update(volume)
+		ret.values.numberTrans.update(numberTrans)
+		ret.values.volumeWeightedAverage.update(volumeWeightedAverage)
+		ret
+	}
 }

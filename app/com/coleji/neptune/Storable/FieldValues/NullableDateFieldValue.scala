@@ -2,14 +2,14 @@ package com.coleji.neptune.Storable.FieldValues
 
 import com.coleji.neptune.Core.PermissionsAuthority.PersistenceSystem
 import com.coleji.neptune.Storable.Fields.NullableDateDatabaseField
-import com.coleji.neptune.Storable.{GetSQLLiteral, StorableClass}
+import com.coleji.neptune.Storable.{GetSQLLiteral, GetSQLLiteralPair, StorableClass}
 import play.api.libs.json.{JsNull, JsString, JsValue}
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 class NullableDateFieldValue(instance: StorableClass, @transient fieldInner: NullableDateDatabaseField)(implicit persistenceSystem: PersistenceSystem) extends FieldValue[Option[LocalDate]](instance, fieldInner) {
-	override def getPersistenceLiteral: (String, List[String]) = (GetSQLLiteral(super.get), List.empty)
+	override def getPersistenceLiteral: (String, List[String]) = GetSQLLiteralPair(super.get)
 
 	override def asJSValue: JsValue = super.get match {
 		case None => JsNull

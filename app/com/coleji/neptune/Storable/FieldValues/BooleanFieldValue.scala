@@ -2,11 +2,11 @@ package com.coleji.neptune.Storable.FieldValues
 
 import com.coleji.neptune.Core.PermissionsAuthority.PersistenceSystem
 import com.coleji.neptune.Storable.Fields.BooleanDatabaseField
-import com.coleji.neptune.Storable.{GetSQLLiteral, StorableClass}
+import com.coleji.neptune.Storable.{GetSQLLiteral, GetSQLLiteralPair, StorableClass}
 import play.api.libs.json.{JsBoolean, JsNull, JsValue}
 
 class BooleanFieldValue(instance: StorableClass, @transient fieldInner: BooleanDatabaseField)(implicit persistenceSystem: PersistenceSystem) extends FieldValue[Boolean](instance, fieldInner) {
-	override def getPersistenceLiteral: (String, List[String]) = (GetSQLLiteral(super.get), List.empty)
+	override def getPersistenceLiteral: (String, List[String]) = GetSQLLiteralPair(super.get)
 
 	override def asJSValue: JsValue = JsBoolean(super.get)
 

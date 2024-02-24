@@ -10,7 +10,7 @@ object GetSQLLiteral {
 	def apply(i: Int): String = i.toString
 	def apply(d: Double): String = d.toString
 
-	def apply(b: Boolean): String = "'" + GetSQLLiteralPrepared(b) + "'"
+	def apply(b: Boolean): String = "'" + GetSQLLiteralForPrepared(b) + "'"
 
 	def apply(ld: LocalDate)(implicit persistenceSystem: PersistenceSystem): String = persistenceSystem match {
 		case PERSISTENCE_SYSTEM_MYSQL => "'" + ld.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "'"

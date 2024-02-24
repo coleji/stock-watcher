@@ -80,6 +80,17 @@ abstract class PersistenceBroker private[Core](dbConnection: DatabaseGateway, pr
 		else commitObjectToDatabaseImplementation(i)
 	}
 
+	final def batchInsertObjectsToDatabase(is: List[StorableClass]): Unit = {
+		if (readOnly) throw new UnauthorizedAccessException("Server is in Database Read Only mode.")
+		else if (preparedQueriesOnly) throw new UnauthorizedAccessException("Server is in Prepared Queries Only mode.")
+		else {
+			is.foreach(i => {
+				if (i.valuesList.isEmpty) throw new Exception("Refusing to commit object with empty valuesList: " + i.companion.entityName)
+			})
+			batchInsertObjectsToDatabaseImplementation(is)
+		}
+	}
+
 	final def executePreparedQueryForSelect[T](pq: HardcodedQueryForSelect[T], fetchSize: Int = 50): List[T] = {
 		executePreparedQueryForSelectImplementation(pq, fetchSize)
 	}
@@ -122,6 +133,8 @@ abstract class PersistenceBroker private[Core](dbConnection: DatabaseGateway, pr
 	protected def getAllObjectsOfClassImplementation[T <: StorableClass](obj: StorableObject[T], fieldShutter: Set[DatabaseField[_]], fetchSize: Int): List[T]
 
 	protected def commitObjectToDatabaseImplementation(i: StorableClass): Unit
+
+	protected def batchInsertObjectsToDatabaseImplementation(is: List[StorableClass]): Unit
 
 	protected def executePreparedQueryForSelectImplementation[T](pq: HardcodedQueryForSelect[T], fetchSize: Int = 50): List[T]
 

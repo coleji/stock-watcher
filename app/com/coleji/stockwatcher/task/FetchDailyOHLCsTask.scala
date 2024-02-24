@@ -1,8 +1,8 @@
 package com.coleji.stockwatcher.task
 
 import com.coleji.neptune.Core.UnlockedRequestCache
-import com.coleji.stockwatcher.StockWatcherTask
-import com.coleji.stockwatcher.entity.entitydefinitions.PolygonDailyOHLCDay
+import com.coleji.stockwatcher.{StockWatcherTask, TickerReference}
+import com.coleji.stockwatcher.entity.entitydefinitions.{PolygonDailyOHLC, PolygonDailyOHLCDay}
 import com.coleji.stockwatcher.entity.repository.OHLCRepository
 import com.coleji.stockwatcher.remoteapi.polygon.ohlc.OHLC
 
@@ -10,7 +10,7 @@ import java.time.{LocalDate, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 
 object FetchDailyOHLCsTask extends StockWatcherTask {
-	val START_DATE = LocalDate.now.minusYears(5).plusDays(3)
+	private val START_DATE = LocalDate.now.minusYears(5).plusDays(3)
 
 	protected override def taskAction(rc: UnlockedRequestCache): Unit = {
 		var currentDate = START_DATE
@@ -25,7 +25,27 @@ object FetchDailyOHLCsTask extends StockWatcherTask {
 				if (dbRecords.isEmpty || dbRecords.head.values.marketDate.get.isAfter(currentDate)) {
 					appendLog("Fetching: " + currentDate + " " + currentDate.format(DateTimeFormatter.ofPattern("e")).toInt)
 					val results = OHLC.getOHLC(currentDate, appendLog)
-					appendLog("Got results: " + results.resultsCount)
+					appendLog("Got results: " + results.resultsCount + " status: " + results.status)
+					if (results.status == "OK") {
+						val day = PolygonDailyOHLCDay(currentDate, results.resultsCount, LocalDate.now())
+						rc.commitObjectToDatabase(day)
+						val ohlcs = results.results.getOrElse(List.empty)
+							.filter(r => !TickerReference.blacklistedTickers.contains(r.T))
+							.map(r => PolygonDailyOHLC(
+								marketDate = currentDate,
+								ticker = r.T,
+								open = r.o,
+								close = r.c,
+								high = r.h,
+								low = r.l,
+								volume = r.v.doubleValue,
+								numberTrans = r.n,
+								volumeWeightedAverage = r.vw
+							))
+						rc.batchInsertObjects(ohlcs)
+					} else {
+						appendLog("Got bad status " + results.status + " for date " + currentDate)
+					}
 				} else {
 					dbRecords = dbRecords.tail
 				}
@@ -36,21 +56,9 @@ object FetchDailyOHLCsTask extends StockWatcherTask {
 	}
 
 	def main(args: Array[String]): Unit = {
-		(1 to 10).foreach(i => {
-			val d = ZonedDateTime.now().plusDays(i)
-			println("=====")
-			println(d)
-			println(d.format(DateTimeFormatter.ofPattern("E")))
-			println(d.format(DateTimeFormatter.ofPattern("e")))
-			println((d.format(DateTimeFormatter.ofPattern("e")).toInt-1)%6 != 0)
-		})
-		(1 to 10).foreach(i => {
-			val d = LocalDate.now().plusDays(i)
-			println("=====")
-			println(d)
-			println(d.format(DateTimeFormatter.ofPattern("E")))
-			println(d.format(DateTimeFormatter.ofPattern("e")))
-			println((d.format(DateTimeFormatter.ofPattern("e")).toInt-1)%6 != 0)
-		})
+		val d = new PolygonDailyOHLCDay
+		var r = new PolygonDailyOHLC
+
+		println(d.getClass.getCanonicalName)
 	}
 }

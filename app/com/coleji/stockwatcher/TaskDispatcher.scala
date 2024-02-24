@@ -29,8 +29,8 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle)(){
 	}
 
 	private def loop(PA: PermissionsAuthority): Unit = {
-		println("Looking for tasks to run...." + PA.rootRC)
-		FetchDailyOHLCsTask.run(PA.rootRC.assertUnlocked)
+		println("Looking for tasks to run....")
+//		FetchDailyOHLCsTask.run(PA.rootRC.assertUnlocked)
 	}
 }
 

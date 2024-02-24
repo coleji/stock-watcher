@@ -124,6 +124,9 @@ abstract class UnlockedRequestCache(
 	def commitObjectToDatabase(i: StorableClass): Unit =
 		pb.commitObjectToDatabase(i)
 
+	def batchInsertObjects(is: List[StorableClass]): Unit =
+		pb.batchInsertObjectsToDatabase(is)
+
 	def deleteObjectsById[T <: StorableClass](obj: StorableObject[T], ids: List[Int]): Unit =
 		pb.deleteObjectsByIds(obj, ids)
 }

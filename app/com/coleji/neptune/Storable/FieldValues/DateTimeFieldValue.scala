@@ -2,14 +2,14 @@ package com.coleji.neptune.Storable.FieldValues
 
 import com.coleji.neptune.Core.PermissionsAuthority.PersistenceSystem
 import com.coleji.neptune.Storable.Fields.DateTimeDatabaseField
-import com.coleji.neptune.Storable.{GetSQLLiteral, StorableClass}
+import com.coleji.neptune.Storable.{GetSQLLiteral, GetSQLLiteralPair, StorableClass}
 import play.api.libs.json.{JsNull, JsString, JsValue}
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class DateTimeFieldValue(instance: StorableClass, @transient fieldInner: DateTimeDatabaseField)(implicit persistenceSystem: PersistenceSystem) extends FieldValue[LocalDateTime](instance, fieldInner) {
-	override def getPersistenceLiteral: (String, List[String]) = (GetSQLLiteral(super.get, truncateToDay = false), List.empty)
+	override def getPersistenceLiteral: (String, List[String]) = GetSQLLiteralPair(super.get, truncateToDay = false)
 
 	override def asJSValue: JsValue = JsString(super.get.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
 

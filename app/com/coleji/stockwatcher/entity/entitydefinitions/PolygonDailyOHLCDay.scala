@@ -4,6 +4,8 @@ import com.coleji.neptune.Storable.FieldValues.{DateFieldValue, DoubleFieldValue
 import com.coleji.neptune.Storable.Fields.{DateDatabaseField, DoubleDatabaseField, IntDatabaseField, StringDatabaseField}
 import com.coleji.neptune.Storable.{FieldsObject, StorableClass, StorableObject, ValuesObject}
 
+import java.time.LocalDate
+
 class PolygonDailyOHLCDay extends StorableClass(PolygonDailyOHLCDay) {
 	override object values extends ValuesObject {
 		val id = new IntFieldValue(self, PolygonDailyOHLCDay.fields.id)
@@ -24,4 +26,12 @@ object PolygonDailyOHLCDay extends StorableObject[PolygonDailyOHLCDay] {
 	}
 
 	def primaryKey: IntDatabaseField = fields.id
+
+	def apply(marketDate: LocalDate, resultCount: Int, fetchDate: LocalDate): PolygonDailyOHLCDay = {
+		val ret = new PolygonDailyOHLCDay
+		ret.values.marketDate.update(marketDate)
+		ret.values.resultCount.update(resultCount)
+		ret.values.fetchDate.update(fetchDate)
+		ret
+	}
 }
