@@ -4,7 +4,6 @@ import com.coleji.neptune.Core.PermissionsAuthority.PersistenceSystem
 import com.coleji.neptune.Storable.FieldValues._
 import com.coleji.neptune.Storable.Fields._
 import com.coleji.neptune.Storable.StorableQuery._
-import com.coleji.neptune.Util.Profiler
 import play.api.libs.json.{JsArray, JsObject, JsValue, Writes}
 
 import java.time.{LocalDate, LocalDateTime}
@@ -14,6 +13,7 @@ import scala.reflect.runtime.universe._
 abstract class StorableObject[T <: StorableClass](implicit @transient manifest: scala.reflect.Manifest[T], val persistenceSystem: PersistenceSystem) extends Serializable {
 	StorableObject.addEntity(this)
 	type IntFieldMap = Map[String, IntDatabaseField]
+	type FloatFieldMap = Map[String, FloatDatabaseField]
 	type DoubleFieldMap = Map[String, DoubleDatabaseField]
 	type StringFieldMap = Map[String, StringDatabaseField]
 	type DateFieldMap = Map[String, DateDatabaseField]
@@ -21,6 +21,7 @@ abstract class StorableObject[T <: StorableClass](implicit @transient manifest: 
 	type BooleanFieldMap = Map[String, BooleanDatabaseField]
 
 	type NullableIntFieldMap = Map[String, NullableIntDatabaseField]
+	type NullableFloatFieldMap = Map[String, NullableFloatDatabaseField]
 	type NullableDoubleFieldMap = Map[String, NullableDoubleDatabaseField]
 	type NullableStringFieldMap = Map[String, NullableStringDatabaseField]
 	type NullableDateFieldMap = Map[String, NullableDateDatabaseField]
@@ -57,6 +58,8 @@ abstract class StorableObject[T <: StorableClass](implicit @transient manifest: 
 
 		var intMap: IntFieldMap = Map()
 		var nullableIntMap: NullableIntFieldMap = Map()
+		var floatMap: FloatFieldMap = Map()
+		var nullableFloatMap: NullableFloatFieldMap = Map()
 		var doubleMap: DoubleFieldMap = Map()
 		var nullableDoubleMap: NullableDoubleFieldMap = Map()
 		var stringMap: StringFieldMap = Map()
@@ -83,6 +86,12 @@ abstract class StorableObject[T <: StorableClass](implicit @transient manifest: 
 				case ni: NullableIntDatabaseField =>
 					ni.setRuntimeFieldName(name)
 					nullableIntMap += (name -> ni)
+				case f: FloatDatabaseField =>
+					f.setRuntimeFieldName(name)
+					floatMap += (name -> f)
+				case nf: NullableFloatDatabaseField =>
+					nf.setRuntimeFieldName(name)
+					nullableFloatMap += (name -> nf)
 				case d: DoubleDatabaseField =>
 					d.setRuntimeFieldName(name)
 					doubleMap += (name -> d)
@@ -120,26 +129,30 @@ abstract class StorableObject[T <: StorableClass](implicit @transient manifest: 
 			}
 		}
 
-		(intMap, nullableIntMap, doubleMap, nullableDoubleMap, stringMap, nullableStringMap, dateMap, nullableDateMap, dateTimeMap, nullableDateTimeMap, booleanMap, nullableBooleanMap, nullableClobMap)
+		(intMap, nullableIntMap, floatMap, nullableFloatMap, doubleMap, nullableDoubleMap, stringMap, nullableStringMap, dateMap, nullableDateMap, dateTimeMap, nullableDateTimeMap, booleanMap, nullableBooleanMap, nullableClobMap)
 	}
 
 	lazy val intFieldMap: IntFieldMap = fieldMaps._1
 	lazy val nullableIntFieldMap: NullableIntFieldMap = fieldMaps._2
-	lazy val doubleFieldMap: DoubleFieldMap = fieldMaps._3
-	lazy val nullableDoubleFieldMap: NullableDoubleFieldMap = fieldMaps._4
-	lazy val stringFieldMap: StringFieldMap = fieldMaps._5
-	lazy val nullableStringFieldMap: NullableStringFieldMap = fieldMaps._6
-	lazy val dateFieldMap: DateFieldMap = fieldMaps._7
-	lazy val nullableDateFieldMap: NullableDateFieldMap = fieldMaps._8
-	lazy val dateTimeFieldMap: DateTimeFieldMap = fieldMaps._9
-	lazy val nullableDateTimeFieldMap: NullableDateTimeFieldMap = fieldMaps._10
-	lazy val booleanFieldMap: BooleanFieldMap = fieldMaps._11
-	lazy val nullableBooleanFieldMap: NullableBooleanFieldMap = fieldMaps._12
-	lazy val nullableClobFieldMap: NullableClobFieldMap = fieldMaps._13
+	lazy val floatFieldMap: FloatFieldMap = fieldMaps._3
+	lazy val nullableFloatFieldMap: NullableFloatFieldMap = fieldMaps._4
+	lazy val doubleFieldMap: DoubleFieldMap = fieldMaps._5
+	lazy val nullableDoubleFieldMap: NullableDoubleFieldMap = fieldMaps._6
+	lazy val stringFieldMap: StringFieldMap = fieldMaps._7
+	lazy val nullableStringFieldMap: NullableStringFieldMap = fieldMaps._8
+	lazy val dateFieldMap: DateFieldMap = fieldMaps._9
+	lazy val nullableDateFieldMap: NullableDateFieldMap = fieldMaps._10
+	lazy val dateTimeFieldMap: DateTimeFieldMap = fieldMaps._11
+	lazy val nullableDateTimeFieldMap: NullableDateTimeFieldMap = fieldMaps._12
+	lazy val booleanFieldMap: BooleanFieldMap = fieldMaps._13
+	lazy val nullableBooleanFieldMap: NullableBooleanFieldMap = fieldMaps._14
+	lazy val nullableClobFieldMap: NullableClobFieldMap = fieldMaps._15
 
 	def fieldList: List[DatabaseField[_]] =
 		intFieldMap.values.toList ++
 		nullableIntFieldMap.values.toList ++
+		floatFieldMap.values.toList ++
+		nullableFloatFieldMap.values.toList ++
 		doubleFieldMap.values.toList ++
 		nullableDoubleFieldMap.values.toList ++
 		stringFieldMap.values.toList ++
@@ -246,6 +259,27 @@ abstract class StorableObject[T <: StorableClass](implicit @transient manifest: 
 				embryo.nullableIntValueMap.get(fieldName) match {
 					case Some(fv: NullableIntFieldValue) => field.findValueInProtoStorable(ps, tableAlias.map(field.alias).getOrElse(field.alias)) match {
 						case Some(Some(i: Int)) => fv.initialize(Some(i))
+						case Some(None) => fv.initialize(None)
+						case None =>
+					}
+					case _ => throw new Exception("Field mismatch error between class and object for entity " + entityName + " field " + fieldName)
+				}
+			}))
+
+			floatFieldMap.filter(filterFunction).foreach(tupled((fieldName: String, field: FloatDatabaseField) => {
+				embryo.floatValueMap.get(fieldName) match {
+					case Some(fv: FloatFieldValue) => field.findValueInProtoStorable(ps, tableAlias.map(field.alias).getOrElse(field.alias)) match {
+						case Some(f: Float) => fv.initialize(f)
+						case None =>
+					}
+					case _ => throw new Exception("Field mismatch error between class and object for entity " + entityName + " field " + fieldName)
+				}
+			}))
+
+			nullableFloatFieldMap.filter(filterFunction).foreach(tupled((fieldName: String, field: NullableFloatDatabaseField) => {
+				embryo.nullableFloatValueMap.get(fieldName) match {
+					case Some(fv: NullableFloatFieldValue) => field.findValueInProtoStorable(ps, tableAlias.map(field.alias).getOrElse(field.alias)) match {
+						case Some(Some(f: Float)) => fv.initialize(Some(f))
 						case Some(None) => fv.initialize(None)
 						case None =>
 					}

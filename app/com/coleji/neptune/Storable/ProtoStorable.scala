@@ -10,6 +10,7 @@ import java.time.{LocalDate, LocalDateTime}
 // If it came from a POST or something, ignored is the post parameters that were not able to be matched to a single field (for debugging)
 class ProtoStorable(
 	val intFields: Map[ColumnAlias[_], Option[Int]],
+	val floatFields: Map[ColumnAlias[_], Option[Float]],
 	val doubleFields: Map[ColumnAlias[_], Option[Double]],
 	val stringFields: Map[ColumnAlias[_], Option[String]],
 	val dateFields: Map[ColumnAlias[_], Option[LocalDate]],
@@ -17,5 +18,5 @@ class ProtoStorable(
 	val ignored: Map[ColumnAlias[_], String]
 ) {
 
-	override def toString = s"ProtoStorable(intFields=$intFields\n\n doubleFields=$doubleFields\n\n stringFields=$stringFields\n\n dateFields=$dateFields\n\n dateTimeFields=$dateTimeFields\n\n ignored=$ignored)"
+	override def toString = s"ProtoStorable(intFields=$intFields\n\n floatFields=$floatFields\n\n doubleFields=$doubleFields\n\n stringFields=$stringFields\n\n dateFields=$dateFields\n\n dateTimeFields=$dateTimeFields\n\n ignored=$ignored)"
 }

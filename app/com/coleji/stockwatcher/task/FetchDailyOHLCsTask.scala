@@ -1,12 +1,12 @@
 package com.coleji.stockwatcher.task
 
 import com.coleji.neptune.Core.UnlockedRequestCache
-import com.coleji.stockwatcher.{StockWatcherTask, TickerReference}
 import com.coleji.stockwatcher.entity.entitydefinitions.{PolygonDailyOHLC, PolygonDailyOHLCDay}
 import com.coleji.stockwatcher.entity.repository.OHLCRepository
 import com.coleji.stockwatcher.remoteapi.polygon.ohlc.OHLC
+import com.coleji.stockwatcher.{StockWatcherTask, TickerReference}
 
-import java.time.{LocalDate, ZonedDateTime}
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 object FetchDailyOHLCsTask extends StockWatcherTask {
@@ -53,12 +53,5 @@ object FetchDailyOHLCsTask extends StockWatcherTask {
 
 			currentDate = currentDate.plusDays(1)
 		}
-	}
-
-	def main(args: Array[String]): Unit = {
-		val d = new PolygonDailyOHLCDay
-		var r = new PolygonDailyOHLC
-
-		println(d.getClass.getCanonicalName)
 	}
 }

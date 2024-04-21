@@ -2,8 +2,6 @@ package com.coleji.stockwatcher.remoteapi.polygon.ohlc
 
 import play.api.libs.json.{JsValue, Json}
 
-import java.math.BigInteger
-
 case class DtoOHLC (adjusted: Boolean, queryCount: Int, results: Option[List[DtoOHLCResult]], resultsCount: Int, status: String)
 
 object DtoOHLC {

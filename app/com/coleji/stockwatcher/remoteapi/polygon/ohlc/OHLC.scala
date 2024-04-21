@@ -1,8 +1,7 @@
 package com.coleji.stockwatcher.remoteapi.polygon.ohlc
 
 import com.coleji.stockwatcher.remoteapi.polygon.PolygonApi
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import play.api.libs.ws.WSClient
+import play.api.libs.json.{JsArray, JsObject}
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter

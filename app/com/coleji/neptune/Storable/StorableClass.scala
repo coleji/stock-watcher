@@ -10,6 +10,8 @@ import play.api.libs.json.{JsArray, JsObject, JsValue}
 abstract class StorableClass(@transient private var companionInner: StorableObject[_ <: StorableClass])(implicit persistenceSystem: PersistenceSystem) extends Serializable {
 	type IntFieldValueMap = Map[String, IntFieldValue]
 	type NullableIntFieldValueMap = Map[String, NullableIntFieldValue]
+	type FloatFieldValueMap = Map[String, FloatFieldValue]
+	type NullableFloatFieldValueMap = Map[String, NullableFloatFieldValue]
 	type DoubleFieldValueMap = Map[String, DoubleFieldValue]
 	type NullableDoubleFieldValueMap = Map[String, NullableDoubleFieldValue]
 	type StringFieldValueMap = Map[String, StringFieldValue]
@@ -192,21 +194,25 @@ abstract class StorableClass(@transient private var companionInner: StorableObje
 
 	@transient lazy val intValueMap = valueMaps._1
 	@transient lazy val nullableIntValueMap = valueMaps._2
-	@transient lazy val doubleValueMap = valueMaps._3
-	@transient lazy val nullableDoubleValueMap = valueMaps._4
-	@transient lazy val stringValueMap = valueMaps._5
-	@transient lazy val nullableStringValueMap = valueMaps._6
-	@transient lazy val dateValueMap = valueMaps._7
-	@transient lazy val nullableDateValueMap = valueMaps._8
-	@transient lazy val dateTimeValueMap = valueMaps._9
-	@transient lazy val nullableDateTimeValueMap = valueMaps._10
-	@transient lazy val booleanValueMap = valueMaps._11
-	@transient lazy val nullableBooleanValueMap = valueMaps._12
-	@transient lazy val nullableClobValueMap = valueMaps._13
+	@transient lazy val floatValueMap = valueMaps._3
+	@transient lazy val nullableFloatValueMap = valueMaps._4
+	@transient lazy val doubleValueMap = valueMaps._5
+	@transient lazy val nullableDoubleValueMap = valueMaps._6
+	@transient lazy val stringValueMap = valueMaps._7
+	@transient lazy val nullableStringValueMap = valueMaps._8
+	@transient lazy val dateValueMap = valueMaps._9
+	@transient lazy val nullableDateValueMap = valueMaps._10
+	@transient lazy val dateTimeValueMap = valueMaps._11
+	@transient lazy val nullableDateTimeValueMap = valueMaps._12
+	@transient lazy val booleanValueMap = valueMaps._13
+	@transient lazy val nullableBooleanValueMap = valueMaps._14
+	@transient lazy val nullableClobValueMap = valueMaps._15
 	
 	@transient private lazy val valueMaps = {
 		var intMap: IntFieldValueMap = Map()
 		var nullableIntMap: NullableIntFieldValueMap = Map()
+		var floatMap: FloatFieldValueMap = Map()
+		var nullableFloatMap: NullableFloatFieldValueMap = Map()
 		var doubleMap: DoubleFieldValueMap = Map()
 		var nullableDoubleMap: NullableDoubleFieldValueMap = Map()
 		var stringMap: StringFieldValueMap = Map()
@@ -223,6 +229,8 @@ abstract class StorableClass(@transient private var companionInner: StorableObje
 			valuesList.foreach({
 				case i: IntFieldValue => intMap += (i.getField.getRuntimeFieldName -> i)
 				case ni: NullableIntFieldValue => nullableIntMap += (ni.getField.getRuntimeFieldName -> ni)
+				case f: FloatFieldValue => floatMap += (f.getField.getRuntimeFieldName -> f)
+				case nf: NullableFloatFieldValue => nullableFloatMap += (nf.getField.getRuntimeFieldName -> nf)
 				case d: DoubleFieldValue => doubleMap += (d.getField.getRuntimeFieldName -> d)
 				case nd: NullableDoubleFieldValue => nullableDoubleMap += (nd.getField.getRuntimeFieldName -> nd)
 				case s: StringFieldValue => stringMap += (s.getField.getRuntimeFieldName -> s)
@@ -240,6 +248,8 @@ abstract class StorableClass(@transient private var companionInner: StorableObje
 			valuesListByReflection.foreach({
 				case (name: String, i: IntFieldValue) => intMap += (name -> i)
 				case (name: String, ni: NullableIntFieldValue) => nullableIntMap += (name -> ni)
+				case (name: String, f: FloatFieldValue) => floatMap += (name -> f)
+				case (name: String, nf: NullableFloatFieldValue) => nullableFloatMap += (name -> nf)
 				case (name: String, d: DoubleFieldValue) => doubleMap += (name -> d)
 				case (name: String, nd: NullableDoubleFieldValue) => nullableDoubleMap += (name -> nd)
 				case (name: String, s: StringFieldValue) => stringMap += (name -> s)
@@ -255,6 +265,6 @@ abstract class StorableClass(@transient private var companionInner: StorableObje
 			})
 		}
 
-		(intMap, nullableIntMap, doubleMap, nullableDoubleMap, stringMap, nullableStringMap, dateMap, nullableDateMap, dateTimeMap, nullableDateTimeMap, booleanMap, nullableBooleanMap, nullableClobMap)
+		(intMap, nullableIntMap, floatMap, nullableFloatMap, doubleMap, nullableDoubleMap, stringMap, nullableStringMap, dateMap, nullableDateMap, dateTimeMap, nullableDateTimeMap, booleanMap, nullableBooleanMap, nullableClobMap)
 	}
 }

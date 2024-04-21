@@ -1,5 +1,5 @@
+import com.coleji.stockwatcher.BootLoader
 import com.google.inject.AbstractModule
-import com.coleji.stockwatcher.{BootLoader, TaskDispatcher}
 
 /**
   * This class is a Guice module that tells Guice how to bind several

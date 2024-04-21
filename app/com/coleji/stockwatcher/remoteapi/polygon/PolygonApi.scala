@@ -2,10 +2,9 @@ package com.coleji.stockwatcher.remoteapi.polygon
 
 import com.coleji.neptune.Core.PermissionsAuthority
 import org.apache.hc.core5.net.URIBuilder
-import play.api.libs.json.{JsNull, JsObject, JsResult, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.time.ZonedDateTime
 
 object PolygonApi {
 	val host: String = "https://api.polygon.io"

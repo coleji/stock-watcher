@@ -363,6 +363,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			while (rs.next) {
 				rowCounter += 1
 				var intFields: Map[ColumnAlias[_], Option[Int]] = Map()
+				var floatFields: Map[ColumnAlias[_], Option[Float]] = Map()
 				var doubleFields: Map[ColumnAlias[_], Option[Double]] = Map()
 				var stringFields: Map[ColumnAlias[_], Option[String]] = Map()
 				var dateFields: Map[ColumnAlias[_], Option[LocalDate]] = Map()
@@ -378,6 +379,10 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 						case _: IntDatabaseField | _: NullableIntDatabaseField => {
 							intFields += (makeCompilerHappy(ca) -> Some(rs.getInt(i)))
 							if (rs.wasNull()) intFields += (makeCompilerHappy(ca) -> None)
+						}
+						case _: FloatDatabaseField | _: NullableFloatDatabaseField => {
+							floatFields += (makeCompilerHappy(ca) -> Some(rs.getFloat(i)))
+							if (rs.wasNull()) floatFields += (makeCompilerHappy(ca) -> None)
 						}
 						case _: DoubleDatabaseField | _: NullableDoubleDatabaseField => {
 							doubleFields += (makeCompilerHappy(ca) -> Some(rs.getDouble(i)))
@@ -411,7 +416,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 					}
 				}))
 
-				rows += new ProtoStorable(intFields, doubleFields, stringFields, dateFields, dateTimeFields, Map())
+				rows += new ProtoStorable(intFields, floatFields, doubleFields, stringFields, dateFields, dateTimeFields, Map())
 			}
 			profiler.lap(s"finished rows (rowcount: ${rowCounter})")
 			val fetchCount: Int = Math.ceil(rowCounter.toDouble / fetchSize.toDouble).toInt
@@ -473,6 +478,8 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 				getFieldValues(i.nullableDateTimeValueMap) ++
 				getFieldValues(i.booleanValueMap) ++
 				getFieldValues(i.nullableBooleanValueMap) ++
+				getFieldValues(i.floatValueMap) ++
+				getFieldValues(i.nullableFloatValueMap) ++
 				getFieldValues(i.doubleValueMap) ++
 				getFieldValues(i.nullableDoubleValueMap)
 		})
@@ -533,6 +540,8 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			getFieldValues(i.nullableDateTimeValueMap) ++
 			getFieldValues(i.booleanValueMap) ++
 			getFieldValues(i.nullableBooleanValueMap) ++
+			getFieldValues(i.floatValueMap) ++
+			getFieldValues(i.nullableFloatValueMap) ++
 			getFieldValues(i.doubleValueMap) ++
 			getFieldValues(i.nullableDoubleValueMap)
 

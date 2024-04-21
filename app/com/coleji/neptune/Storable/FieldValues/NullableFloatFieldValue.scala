@@ -1,23 +1,21 @@
 package com.coleji.neptune.Storable.FieldValues
 
 import com.coleji.neptune.Core.PermissionsAuthority.PersistenceSystem
-import com.coleji.neptune.Storable.Fields.NullableBooleanDatabaseField
+import com.coleji.neptune.Storable.Fields.NullableFloatDatabaseField
 import com.coleji.neptune.Storable.{GetSQLLiteralPair, StorableClass}
-import play.api.libs.json.{JsBoolean, JsNull, JsValue}
+import play.api.libs.json.{JsNull, JsNumber, JsValue}
 
-class NullableBooleanFieldValue (instance: StorableClass, @transient fieldInner: NullableBooleanDatabaseField)(implicit persistenceSystem: PersistenceSystem) extends FieldValue[Option[Boolean]](instance, fieldInner) {
+class NullableFloatFieldValue(instance: StorableClass, @transient fieldInner: NullableFloatDatabaseField)(implicit persistenceSystem: PersistenceSystem) extends FieldValue[Option[Float]](instance, fieldInner) {
 	override def getPersistenceLiteral: (String, List[String]) = GetSQLLiteralPair(super.get)
 
 	override def asJSValue: JsValue = super.get match {
-		case Some(true) => JsBoolean(true)
-		case Some(false) => JsBoolean(false)
 		case None => JsNull
+		case Some(v) => JsNumber(v)
 	}
 
 	override def updateFromJsValue(v: JsValue): Boolean = v match {
-		case b: JsBoolean => update(Some(b.value))
+		case n: JsNumber => update(Some(n.value.floatValue))
 		case JsNull => update(None)
 		case _ => false
 	}
 }
-

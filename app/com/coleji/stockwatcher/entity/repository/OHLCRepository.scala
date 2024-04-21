@@ -1,8 +1,6 @@
 package com.coleji.stockwatcher.entity.repository
 
-import com.coleji.neptune.Core.{RequestCache, RootRequestCache}
-import com.coleji.neptune.IO.PreparedQueries.PreparedQueryForSelect
-import com.coleji.neptune.Storable.ResultSetWrapper
+import com.coleji.neptune.Core.RequestCache
 import com.coleji.stockwatcher.entity.entitydefinitions.PolygonDailyOHLCDay
 
 import java.time.LocalDate

@@ -2,7 +2,7 @@ package com.coleji.neptune.Storable.FieldValues
 
 import com.coleji.neptune.Core.PermissionsAuthority.PersistenceSystem
 import com.coleji.neptune.Storable.Fields.NullableDateDatabaseField
-import com.coleji.neptune.Storable.{GetSQLLiteral, GetSQLLiteralPair, StorableClass}
+import com.coleji.neptune.Storable.{GetSQLLiteralPair, StorableClass}
 import play.api.libs.json.{JsNull, JsString, JsValue}
 
 import java.time.LocalDate

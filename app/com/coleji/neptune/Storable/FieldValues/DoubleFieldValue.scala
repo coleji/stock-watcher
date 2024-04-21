@@ -2,7 +2,7 @@ package com.coleji.neptune.Storable.FieldValues
 
 import com.coleji.neptune.Core.PermissionsAuthority.PersistenceSystem
 import com.coleji.neptune.Storable.Fields.DoubleDatabaseField
-import com.coleji.neptune.Storable.{GetSQLLiteral, GetSQLLiteralPair, StorableClass}
+import com.coleji.neptune.Storable.{GetSQLLiteralPair, StorableClass}
 import play.api.libs.json.{JsNull, JsNumber, JsValue}
 
 class DoubleFieldValue(instance: StorableClass, @transient fieldInner: DoubleDatabaseField)(implicit persistenceSystem: PersistenceSystem) extends FieldValue[Double](instance, fieldInner) {

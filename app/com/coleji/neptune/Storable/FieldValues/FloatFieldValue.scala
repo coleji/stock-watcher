@@ -1,17 +1,17 @@
 package com.coleji.neptune.Storable.FieldValues
 
 import com.coleji.neptune.Core.PermissionsAuthority.PersistenceSystem
-import com.coleji.neptune.Storable.Fields.BooleanDatabaseField
+import com.coleji.neptune.Storable.Fields.FloatDatabaseField
 import com.coleji.neptune.Storable.{GetSQLLiteralPair, StorableClass}
-import play.api.libs.json.{JsBoolean, JsNull, JsValue}
+import play.api.libs.json.{JsNull, JsNumber, JsValue}
 
-class BooleanFieldValue(instance: StorableClass, @transient fieldInner: BooleanDatabaseField)(implicit persistenceSystem: PersistenceSystem) extends FieldValue[Boolean](instance, fieldInner) {
+class FloatFieldValue(instance: StorableClass, @transient fieldInner: FloatDatabaseField)(implicit persistenceSystem: PersistenceSystem) extends FieldValue[Float](instance, fieldInner) {
 	override def getPersistenceLiteral: (String, List[String]) = GetSQLLiteralPair(super.get)
 
-	override def asJSValue: JsValue = JsBoolean(super.get)
+	override def asJSValue: JsValue = JsNumber(super.get)
 
 	override def updateFromJsValue(v: JsValue): Boolean = v match {
-		case b: JsBoolean => update(b.value)
+		case n: JsNumber => update(n.value.floatValue)
 		case JsNull => throw new Exception("JsNull provided to nonnull field " + field.getRuntimeFieldName)
 		case _ => false
 	}
