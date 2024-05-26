@@ -9,6 +9,7 @@ import java.time.LocalDate
 object Financials {
 	def getFinancials(until: LocalDate, log: String => Unit): List[DtoFinancialsEvent] = {
 		var ct = 1
+		var total = 0
 		var ret: List[DtoFinancialsEvent] = List.empty
 		var cursor: Option[String] = Option.empty
 
@@ -44,11 +45,13 @@ object Financials {
 
 				val dto: DtoFinancialsApiResult = DtoFinancialsApiResult(Json.toJson(newApiResultHash))
 //				println(dto)
-				println("Successfully fetched " + ct)
+				println("Successfully fetched financials " + ct)
 				cursor = dto.next_url.flatMap(getCursorFromUrl)
 				val rr = dto.results
-				println(s"fetched ${rr.length} splits from ${rr.head.filing_date} to ${rr.last.filing_date}")
+				println(s"fetched ${rr.length} financials from ${rr.head.filing_date} to ${rr.last.filing_date}")
 //				ret = rr.reverse ++ ret
+				total = total + rr.size
+				println("total so far: " + total)
 				val lastSeenDate = rr.last.filing_date.getOrElse(LocalDate.parse("1971-01-01"))
 				println(s"checking lf ${lastSeenDate} is before ${until}")
 				if (lastSeenDate.isBefore(until)) {

@@ -1,7 +1,7 @@
 package com.coleji.stockwatcher
 
 import com.coleji.neptune.Core.PermissionsAuthority
-import com.coleji.stockwatcher.task.{FetchDividendsTask, FetchFinancialsTask, FetchSplitsTask}
+import com.coleji.stockwatcher.task.{FetchDailyOHLCsTask, FetchDividendsTask, FetchFinancialsTask, FetchSplitsTask}
 import play.api.inject.ApplicationLifecycle
 
 import java.util.concurrent.atomic.AtomicBoolean
