@@ -16,8 +16,8 @@ class PolygonFinancialEvent extends StorableClass(PolygonFinancialEvent) {
 		val timeframe = new StringFieldValue(self, PolygonFinancialEvent.fields.timeframe)
 		val fiscalPeriod = new StringFieldValue(self, PolygonFinancialEvent.fields.fiscalPeriod)
 		val fiscalYear = new NullableIntFieldValue(self, PolygonFinancialEvent.fields.fiscalYear)
-		val cik = new NullableStringFieldValue(self, PolygonFinancialEvent.fields.cik)
-		val companyName = new NullableStringFieldValue(self, PolygonFinancialEvent.fields.companyName)
+		val cik = new StringFieldValue(self, PolygonFinancialEvent.fields.cik)
+		val companyName = new StringFieldValue(self, PolygonFinancialEvent.fields.companyName)
 		val sourceFilingUrl = new NullableStringFieldValue(self, PolygonFinancialEvent.fields.sourceFilingUrl)
 		val sourceFilingFileUrl = new NullableStringFieldValue(self, PolygonFinancialEvent.fields.sourceFilingFileUrl)
 	}
@@ -35,8 +35,8 @@ object PolygonFinancialEvent extends StorableObject[PolygonFinancialEvent] {
 		val timeframe = new StringDatabaseField(self, "timeframe", 20)
 		val fiscalPeriod = new StringDatabaseField(self, "fiscal_period", 20)
 		val fiscalYear = new NullableIntDatabaseField(self, "fiscal_year")
-		val cik = new NullableStringDatabaseField(self, "cik", 20)
-		val companyName = new NullableStringDatabaseField(self, "company_name", 100)
+		val cik = new StringDatabaseField(self, "cik", 20)
+		val companyName = new StringDatabaseField(self, "company_name", 100)
 		val sourceFilingUrl = new NullableStringDatabaseField(self, "source_filing_url", 255)
 		val sourceFilingFileUrl = new NullableStringDatabaseField(self, "source_filing_file_url", 255)
 	}
@@ -52,8 +52,8 @@ object PolygonFinancialEvent extends StorableObject[PolygonFinancialEvent] {
 		timeframe: String,
 		fiscalPeriod: String,
 		fiscalYear: Option[Int],
-		cik: Option[String],
-		companyName: Option[String],
+		cik: String,
+		companyName: String,
 		sourceFilingUrl: Option[String],
 		sourceFilingFileUrl: Option[String],
 	): PolygonFinancialEvent = {

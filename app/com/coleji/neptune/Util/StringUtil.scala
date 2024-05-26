@@ -14,4 +14,12 @@ object StringUtil {
 			(ret._1, ret._2.substring(1))
 		}
 	}
+
+	def tryParseInt(s: String): Either[String, Int] = {
+		try {
+			Right(s.toInt)
+		} catch {
+			case e: NumberFormatException => Left(s)
+		}
+	}
 }

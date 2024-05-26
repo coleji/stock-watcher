@@ -49,7 +49,7 @@ object Financials {
 				cursor = dto.next_url.flatMap(getCursorFromUrl)
 				val rr = dto.results
 				println(s"fetched ${rr.length} financials from ${rr.head.filing_date} to ${rr.last.filing_date}")
-//				ret = rr.reverse ++ ret
+				ret = rr.reverse ++ ret
 				total = total + rr.size
 				println("total so far: " + total)
 				val lastSeenDate = rr.last.filing_date.getOrElse(LocalDate.parse("1971-01-01"))
