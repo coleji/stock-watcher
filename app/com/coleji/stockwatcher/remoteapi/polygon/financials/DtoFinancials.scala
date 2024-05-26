@@ -1,6 +1,6 @@
 package com.coleji.stockwatcher.remoteapi.polygon.financials
 
-import play.api.libs.json.{JsValue, Json, OFormat}
+import play.api.libs.json.{JsValue, Json}
 
 import java.time.{LocalDate, LocalDateTime}
 

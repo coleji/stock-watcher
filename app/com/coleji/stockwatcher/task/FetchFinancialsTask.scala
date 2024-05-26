@@ -5,10 +5,8 @@ import com.coleji.neptune.IO.PreparedQueries.PreparedQueryForSelect
 import com.coleji.neptune.Storable.ResultSetWrapper
 import com.coleji.neptune.Util.StringUtil
 import com.coleji.stockwatcher.StockWatcherTask
-import com.coleji.stockwatcher.entity.entitydefinitions.{PolygonFinancial, PolygonFinancialEvent, PolygonFinancialEventTicker, PolygonSplit}
+import com.coleji.stockwatcher.entity.entitydefinitions.{PolygonFinancial, PolygonFinancialEvent, PolygonFinancialEventTicker}
 import com.coleji.stockwatcher.remoteapi.polygon.financials.{DtoFinancialsEvent, Financials}
-import com.coleji.stockwatcher.remoteapi.polygon.splits.Splits
-import com.coleji.stockwatcher.task.FetchSplitsTask.appendLog
 
 import java.time.LocalDate
 

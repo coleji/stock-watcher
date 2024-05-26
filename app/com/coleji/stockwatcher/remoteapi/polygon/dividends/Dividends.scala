@@ -1,7 +1,6 @@
 package com.coleji.stockwatcher.remoteapi.polygon.dividends
 
 import com.coleji.stockwatcher.remoteapi.polygon.PolygonApi
-import com.coleji.stockwatcher.remoteapi.polygon.splits.{DtoSplitResult, DtoSplits}
 import org.apache.hc.core5.net.URIBuilder
 import play.api.libs.json.{JsArray, JsObject}
 

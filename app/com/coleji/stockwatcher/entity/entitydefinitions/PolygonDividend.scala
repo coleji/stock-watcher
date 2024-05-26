@@ -1,7 +1,7 @@
 package com.coleji.stockwatcher.entity.entitydefinitions
 
-import com.coleji.neptune.Storable.FieldValues.{DateFieldValue, DoubleFieldValue, IntFieldValue, NullableDateFieldValue, NullableIntFieldValue, StringFieldValue}
-import com.coleji.neptune.Storable.Fields.{DateDatabaseField, DoubleDatabaseField, IntDatabaseField, NullableDateDatabaseField, NullableIntDatabaseField, StringDatabaseField}
+import com.coleji.neptune.Storable.FieldValues._
+import com.coleji.neptune.Storable.Fields._
 import com.coleji.neptune.Storable.{FieldsObject, StorableClass, StorableObject, ValuesObject}
 
 import java.time.LocalDate

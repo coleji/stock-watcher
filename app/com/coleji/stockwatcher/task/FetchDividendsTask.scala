@@ -4,10 +4,8 @@ import com.coleji.neptune.Core.UnlockedRequestCache
 import com.coleji.neptune.IO.PreparedQueries.PreparedQueryForSelect
 import com.coleji.neptune.Storable.ResultSetWrapper
 import com.coleji.stockwatcher.StockWatcherTask
-import com.coleji.stockwatcher.entity.entitydefinitions.{PolygonDividend, PolygonSplit}
+import com.coleji.stockwatcher.entity.entitydefinitions.PolygonDividend
 import com.coleji.stockwatcher.remoteapi.polygon.dividends.Dividends
-import com.coleji.stockwatcher.remoteapi.polygon.splits.Splits
-import com.coleji.stockwatcher.task.FetchSplitsTask.appendLog
 
 import java.time.LocalDate
 
