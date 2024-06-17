@@ -188,7 +188,7 @@ object DtoFinancialsGrouping {
 }
 
 case class DtoFinancialsEvent(
-	id: String,
+//	id: String,
 	start_date: LocalDate,
 	end_date: LocalDate,
 	filing_date: Option[LocalDate],
