@@ -22,4 +22,10 @@ object StringUtil {
 			case e: NumberFormatException => Left(s)
 		}
 	}
+
+	def optionNoEmptyString(s: String): Option[String] = {
+		if (s == null) None
+		else if (s == "") None
+		else Some(s)
+	}
 }

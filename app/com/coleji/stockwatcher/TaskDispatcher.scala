@@ -32,10 +32,10 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle)(){
 
 	private def loop(PA: PermissionsAuthority): Unit = {
 		println("Looking for tasks to run....")
-		FetchFinancialsTask.run(PA.rootRC.assertUnlocked)
-		FetchDividendsTask.run(PA.rootRC.assertUnlocked)
-		FetchSplitsTask.run(PA.rootRC.assertUnlocked)
-		FetchDailyOHLCsTask.run(PA.rootRC.assertUnlocked)
+//		FetchFinancialsTask.run(PA.rootRC.assertUnlocked)
+//		FetchDividendsTask.run(PA.rootRC.assertUnlocked)
+//		FetchSplitsTask.run(PA.rootRC.assertUnlocked)
+//		FetchDailyOHLCsTask.run(PA.rootRC.assertUnlocked)
 	}
 }
 
