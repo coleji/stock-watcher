@@ -41,14 +41,8 @@ libraryDependencies += "com.zaxxer" % "HikariCP" % "5.1.0" // rel 4 nov 2023
 // https://mvnrepository.com/artifact/io.sentry/sentry
 libraryDependencies += "io.sentry" % "sentry" % "6.34.0" // rel 20 nov 2023
 
-// https://mvnrepository.com/artifact/net.sf.barcode4j/barcode4j
-libraryDependencies += "net.sf.barcode4j" % "barcode4j" % "2.1"
-
 // https://mvnrepository.com/artifact/mysql/mysql-connector-java
 libraryDependencies += "mysql" % "mysql-connector-java" % "8.0.30" // rel 25 jul 2022
-
-// https://mvnrepository.com/artifact/org.apache.commons/commons-csv
-libraryDependencies += "org.apache.commons" % "commons-csv" % "1.10.0" // rel 02 feb 2023
 
 // https://mvnrepository.com/artifact/org.apache.pdfbox/fontbox
 libraryDependencies += "org.apache.pdfbox" % "fontbox" % "3.0.0" // rel 18 aug 2023
@@ -58,3 +52,6 @@ libraryDependencies += "org.apache.pdfbox" % "pdfbox" % "3.0.0" // rel 18 aug 20
 
 // https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5
 libraryDependencies += "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1"
+
+// https://mvnrepository.com/artifact/com.opencsv/opencsv
+libraryDependencies += "com.opencsv" % "opencsv" % "5.9"

@@ -1,15 +1,13 @@
 package com.coleji.stockwatcher.endpoints
 
 import com.coleji.neptune.Core.PermissionsAuthority
-import com.coleji.stockwatcher.TaskDispatcher
 import play.api.mvc.{Action, AnyContent, InjectedController}
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class Ping @Inject()(taskDispatcher: TaskDispatcher)(implicit exec: ExecutionContext) extends InjectedController {
+class Ping @Inject()(implicit exec: ExecutionContext) extends InjectedController {
 	def get()(implicit PA: PermissionsAuthority): Action[AnyContent] = Action { _ => {
-		taskDispatcher.start(PA)
 		Ok("pong")
 	}}
 }
