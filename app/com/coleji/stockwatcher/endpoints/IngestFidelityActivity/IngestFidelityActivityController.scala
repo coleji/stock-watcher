@@ -4,6 +4,7 @@ import com.coleji.neptune.Core.PermissionsAuthority
 import com.coleji.neptune.Util.StringUtil
 import com.opencsv.{CSVReader, CSVReaderBuilder, RFC4180ParserBuilder}
 import org.apache.hc.client5.http.utils.Hex
+import org.slf4j.LoggerFactory
 import play.api.mvc.{Action, InjectedController, RawBuffer}
 
 import java.io.{FileInputStream, StringReader}
@@ -15,6 +16,7 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 
 class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext) extends InjectedController {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	def post()(implicit PA: PermissionsAuthority): Action[RawBuffer] = Action(parse.raw) { req => {
 		val file = req.body.asFile
 		val bytes = (new FileInputStream(file)).readAllBytes().toList
@@ -40,10 +42,8 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 		val headers = nextNonEmptyLine(csvReader).get
 		val rawRows = collectRows(csvReader, List.empty)
 		val rows = rawRows.map(row => {
-//			println(row)
 			val map = row.zipWithIndex.filter(t => t._2 < 17).map(t => headers(t._2) -> t._1.trim).toMap
-//			map
-//			println(map)
+
 			FidelityActivityDto(
 				runDate = LocalDate.parse(map("Run Date"), DateTimeFormatter.ofPattern("MMM-dd-yyyy")),
 				account = map("Account"),
@@ -70,26 +70,26 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 
 
 		rows.reverse.filter(_.account.startsWith("Individual")).foreach(r => {
-			if (r.symbol.isDefined && r.symbol.get == "VTI") println(r)
+			if (r.symbol.isDefined && r.symbol.get == "VTI") logger.debug(r.toString)
 			if (r.action.startsWith("YOU BOUGHT") && r.symbol.nonEmpty) {
-//				println("buy")
+				logger.debug("buy")
 				val sym = r.symbol.get
 				val existing = owned.getOrElse(sym, 0)
 				owned(sym) = existing + r.quantity.get.toInt
 			} else if (r.action.startsWith("YOU SOLD") && r.symbol.nonEmpty) {
-//				println("sell")
+				logger.debug("sell")
 				val sym = r.symbol.get
 				val existing = owned.getOrElse(sym, 0)
 				val newTotal = existing + r.quantity.get.toInt
-				if (newTotal < 0) println(s"sold ${r.quantity} of ${r.symbol} new total is ${newTotal}")
+				if (newTotal < 0) logger.debug(s"sold ${r.quantity} of ${r.symbol} new total is ${newTotal}")
 				else owned(sym) = newTotal
 
-			} //else println(r.action)
-			println(owned.get("VTI"))
+			} //else logger.debug(r.action)
+			logger.debug(owned.get("VTI").toString)
 		})
 
 
-		println(owned.filter(t => t._2 > 0))
+		logger.debug(owned.filter(t => t._2 > 0).toString())
 
 		Ok("hi")
 	}}

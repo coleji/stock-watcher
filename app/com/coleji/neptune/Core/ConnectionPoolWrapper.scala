@@ -1,11 +1,13 @@
 package com.coleji.neptune.Core
 
 import com.zaxxer.hikari.HikariDataSource
+import org.slf4j.LoggerFactory
 
 import java.sql.Connection
 import java.util.concurrent.atomic.AtomicInteger
 
 class ConnectionPoolWrapper(private val source: HikariDataSource)  {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	var openConnections = new AtomicInteger(0)
 	var connectionHighWaterMark = new AtomicInteger(0)
 
@@ -18,7 +20,7 @@ class ConnectionPoolWrapper(private val source: HikariDataSource)  {
 			ret
 		} catch {
 			case e: Throwable => {
-				PA.logger.error("Error using a DB connection: ", e)
+				PA.emailLogger.error("Error using a DB connection: ", e)
 				throw e
 			}
 		} finally {
@@ -40,14 +42,15 @@ class ConnectionPoolWrapper(private val source: HikariDataSource)  {
 		openConnections.incrementAndGet()
 		if (openConnections.get() > connectionHighWaterMark.get()) {
 			connectionHighWaterMark.set(openConnections.get())
+			logger.info("high water mark: " + connectionHighWaterMark.get())
 		}
-		println("Grabbed DB connection; in use: " + openConnections.get())
-		println("high water mark: " + connectionHighWaterMark.get())
+		logger.debug("Grabbed DB connection; in use: " + openConnections.get())
+		logger.debug("high water mark: " + connectionHighWaterMark.get())
 	}
 
 	private[Core] def decrement(): Unit = {
 		openConnections.decrementAndGet()
-		println("Freed DB connection; in use: " + openConnections.get())
+		logger.debug("Freed DB connection; in use: " + openConnections.get())
 	}
 
 	private[Core] def close(): Unit = source.close()

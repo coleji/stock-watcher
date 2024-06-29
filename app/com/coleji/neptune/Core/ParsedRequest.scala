@@ -45,7 +45,7 @@ object ParsedRequest {
 		)
 	} catch {
 		case e: Throwable => {
-			PA.logger.error("Failure to parse request", e)
+			PA.emailLogger.error("Failure to parse request", e)
 			Sentry.captureException(e)
 			throw e
 	}}

@@ -7,6 +7,7 @@ import com.coleji.neptune.Storable.Fields.DatabaseField
 import com.coleji.neptune.Storable.StorableQuery.{QueryBuilder, QueryBuilderResultRow}
 import com.coleji.neptune.Storable.{Filter, StorableClass, StorableObject}
 import com.coleji.neptune.Util.PropertiesWrapper
+import org.slf4j.LoggerFactory
 import redis.clients.jedis.JedisPool
 
 // TODO: Some sort of security on the CacheBroker so arbitrary requests can't see the authentication tokens
@@ -17,6 +18,7 @@ sealed abstract class RequestCache private[Core](
 	dbGateway: DatabaseGateway,
 	redisPool: JedisPool
 )(implicit val PA: PermissionsAuthority) {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	def companion: RequestCacheObject[_]
 
 	protected val pb: PersistenceBroker = {
@@ -66,13 +68,13 @@ sealed abstract class RequestCache private[Core](
 	}
 
 	def withTransaction[L, R](block: () => Either[L, R]): Either[L, R] = {
-		println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  TRANSACTION OPENED")
+		logger.debug("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  TRANSACTION OPENED")
 		pb.openTransaction()
 		try {
 			val result = block()
 			result match {
 				case l: Left[L, R] => {
-					println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  RRRRROLLING IT BACK")
+					logger.debug("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  RRRRROLLING IT BACK")
 					pb.rollback()
 					l
 				}

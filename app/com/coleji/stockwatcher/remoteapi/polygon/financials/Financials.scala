@@ -2,11 +2,13 @@ package com.coleji.stockwatcher.remoteapi.polygon.financials
 
 import com.coleji.stockwatcher.remoteapi.polygon.PolygonApi
 import org.apache.hc.core5.net.URIBuilder
+import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsArray, JsObject, Json}
 
 import java.time.LocalDate
 
 object Financials {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	def getFinancials(until: LocalDate, log: String => Unit): List[DtoFinancialsEvent] = {
 		var ct = 1
 		var total = 0
@@ -14,7 +16,7 @@ object Financials {
 		var cursor: Option[String] = Option.empty
 
 		do {
-			cursor.foreach(println)
+			cursor.foreach(logger.debug)
 			val rawResult = PolygonApi.callApi(getPath(cursor))
 
 			try {
@@ -39,23 +41,19 @@ object Financials {
 				val newApiResultHash = collection.mutable.Map(rawResult.asInstanceOf[JsObject].value.toSeq: _*)
 				newApiResultHash.put("results", Json.toJson(updatedResults))
 
-//				println("$$$$")
-//				println(Json.toJson(newApiResultHash).toString())
-//				println("$$$$")
-
 				val dto: DtoFinancialsApiResult = DtoFinancialsApiResult(Json.toJson(newApiResultHash))
-//				println(dto)
-				println("Successfully fetched financials " + ct)
+
+				logger.debug("Successfully fetched financials " + ct)
 				cursor = dto.next_url.flatMap(getCursorFromUrl)
 				val rr = dto.results
-				println(s"fetched ${rr.length} financials from ${rr.head.filing_date} to ${rr.last.filing_date}")
+				logger.debug(s"fetched ${rr.length} financials from ${rr.head.filing_date} to ${rr.last.filing_date}")
 				ret = rr.reverse ++ ret
 				total = total + rr.size
-				println("total so far: " + total)
+				logger.debug("total so far: " + total)
 				val lastSeenDate = rr.last.filing_date.getOrElse(LocalDate.parse("1971-01-01"))
-				println(s"checking lf ${lastSeenDate} is before ${until}")
+				logger.debug(s"checking lf ${lastSeenDate} is before ${until}")
 				if (lastSeenDate.isBefore(until)) {
-					println("yep")
+					logger.debug("yep")
 					cursor = None
 				}
 			} catch {

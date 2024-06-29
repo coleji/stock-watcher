@@ -2,11 +2,13 @@ package com.coleji.stockwatcher
 
 import com.coleji.neptune.Core.Boot.ServerBootLoaderLive
 import com.coleji.neptune.Util.PropertiesWrapper
+import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 
 import javax.inject.Inject
 
 class BootLoader @Inject()(lifecycle: ApplicationLifecycle, taskDispatcher: TaskDispatcher) extends ServerBootLoaderLive {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	private val PROPERTY_NAMES = BootLoader.PROPERTY_NAMES
 
 	val requiredProperties = List(
@@ -17,10 +19,9 @@ class BootLoader @Inject()(lifecycle: ApplicationLifecycle, taskDispatcher: Task
 
 	}
 
-	println("GIT HASH: $$GITHUB_SHA$$")
+	logger.info("GIT HASH: $$GITHUB_SHA$$")
 
 	val PA = this.init(lifecycle, BootLoader.ENTITY_PACKAGE_PATH, List.empty,  requiredProperties, paPostBoot)
-	println("about to start task thread")
 	val taskThread = new Thread(() => {
 		taskDispatcher.start()
 	})

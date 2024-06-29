@@ -7,11 +7,12 @@ import com.coleji.neptune.Util.DateUtil
 import com.coleji.stockwatcher.StockWatcherTask
 import com.coleji.stockwatcher.entity.entitydefinitions.PolygonDividend
 import com.coleji.stockwatcher.remoteapi.polygon.dividends.Dividends
-import com.coleji.stockwatcher.task.FetchFinancialsTask.API_FETCH_HOUR
+import org.slf4j.LoggerFactory
 
 import java.time.{LocalDate, ZonedDateTime}
 
 object FetchDividendsTask extends StockWatcherTask {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	override def getNextRuntime: ZonedDateTime = DateUtil.setHour(ZonedDateTime.now().plusDays(1), API_FETCH_HOUR)
 
 	protected override def taskAction(rc: UnlockedRequestCache): Unit = {
@@ -24,16 +25,14 @@ object FetchDividendsTask extends StockWatcherTask {
 
 		val maxDate = Option(rc.executePreparedQueryForSelect(latestDividendQ).head).getOrElse(LocalDate.MIN)
 
-		println("max date is: " + maxDate)
+		logger.debug("max date is: " + maxDate)
 
 		val dividends = Dividends.getDividends(maxDate, appendLog)
-//		println(dividends)
 		val toInsert = dividends
 			.filter(d => d.declaration_date.isAfter(maxDate))
 			.map(d => PolygonDividend(d.ticker, d.declaration_date, d.ex_dividend_date, d.record_date, d.pay_date, d.cash_amount, d.dividend_type, d.frequency))
-		println("no pay date: " + dividends.count(_.pay_date.isEmpty))
-		println("no frequency: " + dividends.count(_.frequency.isEmpty))
-//		println(toInsert)
+		logger.debug("no pay date: " + dividends.count(_.pay_date.isEmpty))
+		logger.debug("no frequency: " + dividends.count(_.frequency.isEmpty))
 		rc.batchInsertObjects(toInsert)
 	}
 }

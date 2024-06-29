@@ -10,6 +10,7 @@ import com.coleji.neptune.IO.PreparedQueries.{PreparedQueryForSelect, PreparedQu
 import com.coleji.neptune.Storable.{ResultSetWrapper, StorableClass, StorableObject}
 import com.coleji.neptune.Util.{Initializable, PropertiesWrapper}
 import io.sentry.Sentry
+import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsResultException, JsValue}
 import play.api.mvc.{Result, Results}
 import redis.clients.jedis.JedisPool
@@ -28,18 +29,19 @@ class PermissionsAuthority private[Core] (
 	redisPool: JedisPool,
 	paPostBoot: PropertiesWrapper => Unit,
 )  {
-	println(s"inside PermissionsAuthority constructor: test mode: ${systemParams.isTestMode}, readOnlyDatabase: ${systemParams.readOnlyDatabase}")
-	println(systemParams)
-	println(customParams)
-	println("AllowableUserTypes: ", systemParams.allowableUserTypes)
-	println("PA Debug: " + systemParams.isDebugMode)
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
+	logger.debug(s"inside PermissionsAuthority constructor: test mode: ${systemParams.isTestMode}, readOnlyDatabase: ${systemParams.readOnlyDatabase}")
+	logger.debug(systemParams.toString)
+	logger.debug(customParams.toString)
+	logger.debug("AllowableUserTypes: ", systemParams.allowableUserTypes)
+	logger.debug("PA Debug: " + systemParams.isDebugMode)
 
 	lazy val rootRC: RootRequestCache = RootRequestCache.create(customParams, dbGateway, redisPool)
 	// TODO: should this ever be used except by actual root-originated reqs e.g. crons?
 	// e.g. there are some staff/member accessible functions that ultimately use this (even if they cant access rootPB directly)
 	private lazy val rootCB = new RedisBroker(redisPool)
 
-	lazy val logger: Logger = if (!systemParams.isTestMode) new ProductionLogger(new SSMTPEmailer(Some("jon@community-boating.org"))) else new UnitTestLogger
+	lazy val emailLogger: Logger = if (!systemParams.isTestMode) new ProductionLogger(new SSMTPEmailer(Some("jon@community-boating.org"))) else new UnitTestLogger
 
 	paPostBoot(customParams)
 
@@ -80,7 +82,7 @@ class PermissionsAuthority private[Core] (
 			block().transform({
 				case Success(r: Result) => Success(r)
 				case Failure(e: Throwable) => {
-					logger.error(e.getMessage, e)
+					emailLogger.error(e.getMessage, e)
 					Sentry.captureException(e)
 					Success(Results.Status(400)(ResultError.UNKNOWN.asJsObject))
 				}
@@ -101,7 +103,7 @@ class PermissionsAuthority private[Core] (
 				Future(Results.Status(400)(ResultError.UNKNOWN.asJsObject))
 			}
 			case e: Throwable => {
-				logger.error(e.getMessage, e)
+				emailLogger.error(e.getMessage, e)
 				Sentry.captureException(e)
 				Future(Results.Status(400)(ResultError.UNKNOWN.asJsObject))
 			}
@@ -180,12 +182,12 @@ class PermissionsAuthority private[Core] (
 		parsedRequest: ParsedRequest,
 		rootCB: CacheBroker = rootCB
 	): Option[T] = synchronized {
-		println("\n\n====================================================")
-		println("====================================================")
-		println("====================================================")
-		println("Path: " + parsedRequest.path)
-		println("Request received: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-		println("Headers: " + parsedRequest.headers)
+		logger.info("\n\n====================================================")
+		logger.info("====================================================")
+		logger.info("====================================================")
+		logger.info("Path: " + parsedRequest.path)
+		logger.info("Request received: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+		logger.info("Headers: " + parsedRequest.headers)
 
 		val authentication: Option[T] = requiredUserType.getAuthenticatedUsernameInRequest(
 			parsedRequest,
@@ -194,7 +196,7 @@ class PermissionsAuthority private[Core] (
 		) match {
 			case None => None
 			case Some(x: String) => {
-				println("AUTHENTICATION:  Request is authenticated as " + requiredUserType.getClass.getName)
+				logger.info("AUTHENTICATION:  Request is authenticated as " + requiredUserType.getClass.getName)
 				Some(requiredUserType.create(x, customParams, dbGateway, redisPool))
 			}
 		}
@@ -214,10 +216,10 @@ class PermissionsAuthority private[Core] (
 		}
 
 		if (!corsOK) {
-			println("@@@  Nuking RC due to potential CSRF")
+			logger.info("@@@  Nuking RC due to potential CSRF")
 			throw new CORSException
 		} else {
-			println("@@@  CSRF check passed")
+			logger.info("@@@  CSRF check passed")
 
 			authentication
 		}
@@ -251,19 +253,19 @@ class PermissionsAuthority private[Core] (
 
 	private[Core] def bootChecks(): Unit = {
 		if (systemParams.isDebugMode) {
-			println("running PA boot checks")
+			logger.info("running PA boot checks")
 			if (this.checkAllValueListsMatchReflection(systemParams.entityPackagePath).nonEmpty) {
 				throw new Exception("ValuesList is not correct for: " + this.checkAllValueListsMatchReflection(systemParams.entityPackagePath))
 			}
 		} else {
-			println("non debug mode, skipping boot checks")
+			logger.info("non debug mode, skipping boot checks")
 		}
 	}
 
 	private[Core] def instantiateAllEntityCompanions(entityPackagePath: String): List[StorableObject[_]] = {
 		val files = getAllEntityFiles(entityPackagePath)
 		files.foreach(f => companionForEntityFile[Any](entityPackagePath, f))
-		println(files)
+		logger.debug(files.toString())
 		StorableObject.getEntities
 	}
 
@@ -281,7 +283,7 @@ class PermissionsAuthority private[Core] (
 					override def getQuery: String = "delete from " + e.entityName
 				}
 				val result = rootRC.executePreparedQueryForUpdateOrDelete(q)
-				println(s"deleted $result rows from ${e.entityName}")
+				logger.info(s"deleted $result rows from ${e.entityName}")
 			})
 		}
 	}
@@ -308,6 +310,7 @@ class PermissionsAuthority private[Core] (
 }
 
 object PermissionsAuthority {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	private var paWrapper: Initializable[PermissionsAuthority] = new Initializable[PermissionsAuthority]()
 
 	def isBooted: Boolean = paWrapper.isInitialized
@@ -317,7 +320,7 @@ object PermissionsAuthority {
 	private[Core] def setPA(pa: PermissionsAuthority): PermissionsAuthority = paWrapper.set(pa)
 
 	private[Core] def clearPA(): Unit = {
-		println("in clearPA()")
+		logger.debug("in clearPA()")
 		if (isBooted && paWrapper.get.systemParams.isTestMode) {
 			this.paWrapper = new Initializable[PermissionsAuthority]()
 		}

@@ -1,6 +1,7 @@
 package com.coleji.neptune.API
 
 import com.coleji.neptune.Core._
+import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 import play.api.mvc.{Action, AnyContent, InjectedController}
@@ -8,10 +9,11 @@ import play.api.mvc.{Action, AnyContent, InjectedController}
 import scala.concurrent.Future
 
 trait CacheableResultFromRemoteRequest[T <: ParamsObject, U] extends CacheableResult[T, U] with InjectedController {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	private def getFuture(cb: CacheBroker, rc: RequestCache, params: T, ws: WSClient, url: String): Future[String] = {
 		val calculateValue: (() => Future[JsObject]) = () => {
 			val request: WSRequest = ws.url(url)
-			println("*** Making remote web request!")
+			logger.debug("*** Making remote web request!")
 			val futureResponse: Future[WSResponse] = request.get()
 			val jsonFuture: Future[JsObject] = futureResponse.map(_.json match {
 				case json: JsObject => json

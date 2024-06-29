@@ -3,8 +3,10 @@ package com.coleji.neptune.Core
 import com.coleji.neptune.Core.Boot.ServerBootLoader
 import com.coleji.neptune.Util.PropertiesWrapper
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import org.slf4j.LoggerFactory
 
 object MysqlDatabaseConnection {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	private[Core] def apply(confFileLocation: String): DatabaseGateway = {
 		val pw = new PropertiesWrapper(confFileLocation, List("host", "port", "username", "password", "schema"))
 
@@ -39,7 +41,7 @@ object MysqlDatabaseConnection {
 		username: String, password: String, poolSize: Int
 	): HikariConfig = {
 		val config = new HikariConfig()
-		println("username: " + username + " max pool size: " + poolSize)
+		logger.debug("username: " + username + " max pool size: " + poolSize)
 
 		config.setJdbcUrl(s"jdbc:mysql://$host:$port/$schema")
 		config.setUsername(username)

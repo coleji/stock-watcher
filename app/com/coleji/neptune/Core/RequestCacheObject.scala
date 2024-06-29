@@ -2,9 +2,12 @@ package com.coleji.neptune.Core
 
 import com.coleji.neptune.Exception.UserTypeMismatchException
 import com.coleji.neptune.Util.PropertiesWrapper
+import org.slf4j.LoggerFactory
 import redis.clients.jedis.JedisPool
 
 abstract class RequestCacheObject[T <: RequestCache] {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
+
 	val EMPTY_NONCE = "$EMPTY_AUTH_NONCE$"
 	val SEC_COOKIE_NAME_PUBLIC = "CBIDB-SEC"
 	val SEC_COOKIE_NAME_STAFF = "CBIDB-SEC-STAFF"
@@ -33,9 +36,9 @@ abstract class RequestCacheObject[T <: RequestCache] {
 		else {
 			val cookie = secCookies.toList.head
 			val token = cookie.value
-			println("Found cookie on request: " + token)
+			logger.debug("Found cookie on request: " + token)
 			val cacheResult = rootCB.get(cookieName + "_" + token)
-			println(cacheResult)
+			logger.debug(cacheResult.toString)
 			cacheResult match {
 				case None => None
 				case Some(s: String) => {
@@ -44,12 +47,12 @@ abstract class RequestCacheObject[T <: RequestCache] {
 					// If the comma is the first char, userName will be ""
 					val userName = split(0)
 					val expires = split(1)
-					println("expires ")
-					println(expires)
-					println("and its currently ")
-					println(System.currentTimeMillis())
+					logger.debug("expires ")
+					logger.debug(expires)
+					logger.debug("and its currently ")
+					logger.debug(System.currentTimeMillis().toString)
 					if (expires.toLong < System.currentTimeMillis()) {
-						println("yeah thats expired")
+						logger.debug("yeah thats expired")
 						None
 					}
 					else Some(userName)

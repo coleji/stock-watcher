@@ -5,16 +5,18 @@ import com.coleji.neptune.IO.PreparedQueries.{HardcodedQueryForInsert, Hardcoded
 import com.coleji.neptune.Storable.Fields.DatabaseField
 import com.coleji.neptune.Storable.StorableQuery.{QueryBuilder, QueryBuilderResultRow}
 import com.coleji.neptune.Storable.{Filter, StorableClass, StorableObject}
+import org.slf4j.LoggerFactory
 
 import java.sql.Connection
 
 // TODO: decide on one place for all the fetchSize defaults and delete the rest
 abstract class PersistenceBroker private[Core](dbConnection: DatabaseGateway, preparedQueriesOnly: Boolean, readOnly: Boolean) {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	var transactionConnection: Option[Connection] = None
 
 	override def finalize(): Unit = {
 		transactionConnection.foreach(c => {
-			println("A transaction connection just got GC'd")
+			logger.error("A transaction connection just got GC'd")
 			c.close()
 			dbConnection.mainPool.decrement()
 		})
@@ -22,13 +24,13 @@ abstract class PersistenceBroker private[Core](dbConnection: DatabaseGateway, pr
 	}
 
 	def openTransaction(): Unit = {
-		println("getting connection for transaction")
+		logger.debug("getting connection for transaction")
 		transactionConnection = Some(dbConnection.mainPool.getConnectionForTransaction)
-		println("transaction connection id: " + transactionConnection.get.hashCode())
+		logger.debug("transaction connection id: " + transactionConnection.get.hashCode())
 	}
 
 	def commit(): Unit = {
-		println("committing connection for transaction")
+		logger.debug("committing connection for transaction")
 		transactionConnection.foreach(c => {
 			c.commit()
 			c.close()
@@ -38,7 +40,7 @@ abstract class PersistenceBroker private[Core](dbConnection: DatabaseGateway, pr
 	}
 
 	def rollback(): Unit = {
-		println("rolling back connection for transaction")
+		logger.debug("rolling back connection for transaction")
 		transactionConnection.foreach(c => {
 			c.rollback()
 			c.close()

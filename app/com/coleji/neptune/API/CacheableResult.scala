@@ -2,6 +2,7 @@ package com.coleji.neptune.API
 
 import com.coleji.neptune.Core.{CacheBroker, RequestCache}
 import com.coleji.neptune.Util.JsonUtil
+import org.slf4j.LoggerFactory
 import play.api.libs.json._
 
 import java.time.format.DateTimeFormatter
@@ -11,6 +12,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 
 
 trait CacheableResult[T <: ParamsObject, U] {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	implicit val exec: ExecutionContext
 	type CacheKey = String
 	val cacheExpirationDatePattern: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ")
@@ -37,7 +39,7 @@ trait CacheableResult[T <: ParamsObject, U] {
 				}
 			}
 			case None => {
-				println("cache miss")
+				logger.info("cache miss")
 				tryGet(cb, rc, params, calculateValue)
 			}
 		}
@@ -48,7 +50,7 @@ trait CacheableResult[T <: ParamsObject, U] {
 		val cacheKey = getCacheBrokerKey(params)
 		cb.get(cacheKey) match {
 			case Some(s) => {
-				println("cache hit: " + cacheKey)
+				logger.info("cache hit: " + cacheKey)
 				val value: JsValue = Json.parse(s)
 				val data: JsObject = JsonUtil.getProperty[JsObject](value, "data")
 				val cacheExpiration: String = JsonUtil.getProperty[JsString](data, cacheExpiresKeyName).value
@@ -70,12 +72,11 @@ trait CacheableResult[T <: ParamsObject, U] {
 	// TODO: if waiters are waiting and a crash happens, they should all try themselves?
 	private def tryGet(cb: CacheBroker, rc: RequestCache, params: T, calculateValue: (() => Future[JsObject])): Future[String] = {
 		val cacheKey = getCacheBrokerKey(params)
-		println("here we go")
 		synchronized {
 			val notFirst = CacheableResult.inUse.contains(cacheKey)
 			CacheableResult.inUse.add(cacheKey)
 			if (notFirst) {
-				println("queueing; this is queue position " + (CacheableResult.waiting.get(cacheKey) match {
+				logger.debug("queueing; this is queue position " + (CacheableResult.waiting.get(cacheKey) match {
 					case Some(x) => x.length
 					case None => 0
 				}))
@@ -92,13 +93,13 @@ trait CacheableResult[T <: ParamsObject, U] {
 					case Some(x) => x += p
 					case None => CacheableResult.waiting(cacheKey) = mutable.ListBuffer(p)
 				}
-				println("now waiting has size " + CacheableResult.waiting(cacheKey).length)
+				logger.debug("now waiting has size " + CacheableResult.waiting(cacheKey).length)
 				// Nothing to do now but wait for that first person to finish getting the result.
 				// Whenever that happens, return that result
 				p.future.onComplete(_ => {
 					CacheableResult.waiting(cacheKey) -= p
 					if (CacheableResult.waiting(cacheKey).isEmpty) {
-						println("$$$$$$$$  LAST ONE, removing old result")
+						logger.debug("$$$$$$$$  LAST ONE, removing old result")
 						CacheableResult.resultMap.remove(cacheKey)
 					}
 				})
@@ -113,7 +114,7 @@ trait CacheableResult[T <: ParamsObject, U] {
 				// first person to go stores a promise that all queued's will use
 				val p = Promise[String]()
 				CacheableResult.resultMap.put(cacheKey, p)
-				println("got the go-ahead for " + cacheKey)
+				logger.debug("got the go-ahead for " + cacheKey)
 				// get the result and complete the promise with it
 				p.completeWith(calculateValue().map(json => {
 					// Whether it crashed or not, release the hold on this cache key
@@ -124,11 +125,11 @@ trait CacheableResult[T <: ParamsObject, U] {
 					)
 					val result: String = new JsObject(Map("data" -> newData)).toString()
 					saveToCache(cb, result, params)
-					println("done son; completing all queued")
+					logger.debug("done son; completing all queued")
 					result
 				}))
 				p.future.failed.foreach(e => {
-					println("Failure detected; cleaning up")
+					logger.warn("Failure detected; cleaning up")
 					CacheableResult.inUse.remove(cacheKey)
 				})
 				p.future

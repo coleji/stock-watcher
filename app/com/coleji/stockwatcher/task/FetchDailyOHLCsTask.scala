@@ -5,11 +5,10 @@ import com.coleji.neptune.Util.DateUtil
 import com.coleji.stockwatcher.entity.entitydefinitions.{PolygonDailyOHLC, PolygonDailyOHLCDay}
 import com.coleji.stockwatcher.entity.repository.OHLCRepository
 import com.coleji.stockwatcher.remoteapi.polygon.ohlc.OHLC
-import com.coleji.stockwatcher.task.FetchFinancialsTask.API_FETCH_HOUR
 import com.coleji.stockwatcher.{StockWatcherTask, TickerReference}
 
-import java.time.{LocalDate, ZonedDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, ZonedDateTime}
 
 object FetchDailyOHLCsTask extends StockWatcherTask {
 	override def getNextRuntime: ZonedDateTime = DateUtil.setHour(ZonedDateTime.now().plusDays(1), API_FETCH_HOUR)

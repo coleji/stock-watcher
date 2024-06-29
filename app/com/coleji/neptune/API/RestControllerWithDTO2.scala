@@ -2,10 +2,12 @@ package com.coleji.neptune.API
 
 import com.coleji.neptune.Core.{PermissionsAuthority, UnlockedRequestCache}
 import com.coleji.neptune.Storable.{StorableClass, StorableObject}
+import org.slf4j.LoggerFactory
 
 import scala.reflect.runtime.universe
 
 abstract class RestControllerWithDTO2[S <: StorableClass, D](obj: StorableObject[S])(implicit manifest: scala.reflect.Manifest[S]) {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	protected def runValidationsForUpdate(rc: UnlockedRequestCache, dto: D): ValidationResult
 	protected def runValidationsForInsert(rc: UnlockedRequestCache, dto: D): ValidationResult
 	protected def mutateStorableForUpdate(storable: S, dto: D): S
@@ -40,7 +42,7 @@ abstract class RestControllerWithDTO2[S <: StorableClass, D](obj: StorableObject
 				runValidationsForUpdate(rc, dto) match {
 					case ve: ValidationError => Left(ve)
 					case ValidationOk => {
-						println("about to fetch " + obj.entityName + "#" + dtoId)
+						logger.debug("about to fetch " + obj.entityName + "#" + dtoId)
 						val storable = rc.getObjectById(obj, dtoId, Set(obj.primaryKey)).get
 						mutateStorableForUpdate(storable, dto)
 						rc.commitObjectToDatabase(storable)

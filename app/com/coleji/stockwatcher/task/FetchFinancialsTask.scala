@@ -7,10 +7,12 @@ import com.coleji.neptune.Util.{DateUtil, StringUtil}
 import com.coleji.stockwatcher.StockWatcherTask
 import com.coleji.stockwatcher.entity.entitydefinitions.{PolygonFinancial, PolygonFinancialEvent, PolygonFinancialEventTicker}
 import com.coleji.stockwatcher.remoteapi.polygon.financials.{DtoFinancialsEvent, Financials}
+import org.slf4j.LoggerFactory
 
 import java.time.{LocalDate, ZonedDateTime}
 
 object FetchFinancialsTask extends StockWatcherTask {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	override def getNextRuntime: ZonedDateTime = DateUtil.setHour(ZonedDateTime.now().plusDays(1), API_FETCH_HOUR)
 
 	protected override def taskAction(rc: UnlockedRequestCache): Unit = {
@@ -23,14 +25,14 @@ object FetchFinancialsTask extends StockWatcherTask {
 
 		val maxDate = Option(rc.executePreparedQueryForSelect(latestFilingQ).head).getOrElse(LocalDate.MIN)
 
-		println("max date is: " + maxDate)
+		logger.debug("max date is: " + maxDate)
 
 		val events = Financials.getFinancials(maxDate, appendLog)
-		println(events.length)
+		logger.debug(events.length.toString)
 		val toInsert = events
 			.filter(s => s.filing_date.nonEmpty && s.filing_date.get.isAfter(maxDate))
 
-		println("Events to process: " + toInsert.length)
+		logger.debug("Events to process: " + toInsert.length)
 		var financialCt = 0
 		toInsert.foreach(e => {
 			financialCt = financialCt + storeEvent(rc, e)
@@ -202,7 +204,7 @@ object FetchFinancialsTask extends StockWatcherTask {
 			.filter(_.nonEmpty)
 			.map(_.get)
 
-		println("inserting financials for event, ct: " + financialsToInsert.length)
+		logger.debug("inserting financials for event, ct: " + financialsToInsert.length)
 
 		rc.batchInsertObjects(financialsToInsert)
 		financialsToInsert.length

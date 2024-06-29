@@ -1,10 +1,12 @@
 package com.coleji.stockwatcher
 
 import com.coleji.neptune.Core.UnlockedRequestCache
+import org.slf4j.LoggerFactory
 
 import java.time.ZonedDateTime
 
 trait StockWatcherTask {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	val API_FETCH_HOUR = 1
 
 	protected var log = new StringBuilder()
@@ -15,10 +17,10 @@ trait StockWatcherTask {
 			log = new StringBuilder()
 			taskAction(rc)
 		} finally {
-			println("------------------------------")
-			println("| TASK LOG")
-			println("------------------------------")
-			println(log.toString())
+			logger.info("------------------------------")
+			logger.info("| TASK LOG")
+			logger.info("------------------------------")
+			logger.info(log.toString())
 		}
 	}
 

@@ -3,8 +3,10 @@ package com.coleji.neptune.Core
 import com.coleji.neptune.Core.Boot.ServerBootLoader
 import com.coleji.neptune.Util.PropertiesWrapper
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import org.slf4j.LoggerFactory
 
 object OracleDatabaseConnection {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	private[Core] def apply(confFileLocation: String): DatabaseGateway = {
 		val pw = new PropertiesWrapper(confFileLocation, List("username", "password", "schema", "temptableschema"))
 
@@ -43,16 +45,16 @@ object OracleDatabaseConnection {
 		username: String, password: String, poolSize: Int
 	): HikariConfig = {
 		val config = new HikariConfig()
-		println("username: " + username + " max pool size: " + poolSize)
+		logger.debug("username: " + username + " max pool size: " + poolSize)
 
 		val url = if (tnsName.nonEmpty) {
-			println("using tns")
+			logger.debug("using tns")
 			s"jdbc:oracle:thin:@${tnsName.get}?TNS_ADMIN=conf/private/ora-wallet"
 		} else if (sid.nonEmpty) {
-			println("using sid")
+			logger.debug("using sid")
 			s"jdbc:oracle:thin:@${host.get}:${port.get}:${sid.get}"
 		} else if (serviceName.nonEmpty) {
-			println("using servicename")
+			logger.debug("using servicename")
 			s"jdbc:oracle:thin:@${host.get}:${port.get}/${serviceName.get}"
 		} else {
 			throw new Exception("Oracle connection config: must specify sid or servicename")

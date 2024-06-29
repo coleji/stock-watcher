@@ -6,6 +6,7 @@ import com.coleji.neptune.Storable.Fields._
 import com.coleji.neptune.Storable.StorableQuery._
 import com.coleji.neptune.Storable._
 import com.coleji.neptune.Util.Profiler
+import org.slf4j.LoggerFactory
 
 import java.security.MessageDigest
 import java.sql._
@@ -15,9 +16,11 @@ import scala.collection.mutable.ListBuffer
 abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, preparedQueriesOnly: Boolean, readOnly: Boolean)
 	extends PersistenceBroker(dbGateway, preparedQueriesOnly, readOnly)
 {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
+
 	private def withConnection[T](pool: ConnectionPoolWrapper)(block: Connection => T)(implicit PA: PermissionsAuthority): T = {
 		if (pool.equals(dbGateway.mainPool) && transactionConnection.isDefined) {
-			println("reusing transaction connection")
+			logger.debug("reusing transaction connection")
 			block(transactionConnection.get)
 		} else {
 			pool.withConnection(block)
@@ -25,26 +28,26 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 	}
 	override protected def executePreparedQueryForSelectImplementation[T](pq: HardcodedQueryForSelect[T], fetchSize: Int = 50): List[T] = {
 		val pool = if (pq.useTempSchema) {
-			println("using temp schema")
+			logger.debug("using temp schema")
 			dbGateway.tempPool
 		} else {
-			println("using main schema")
+			logger.debug("using main schema")
 			dbGateway.mainPool
 		}
 		withConnection(pool)(c => {
 			val profiler = new Profiler
 			val rs: ResultSet = pq match {
 				case p: PreparedQueryForSelect[T] => {
-					println("executing prepared select:")
-					println(pq.getQuery)
+					logger.debug("executing prepared select:")
+					logger.debug(pq.getQuery)
 					val preparedStatement = c.prepareStatement(pq.getQuery)
 					p.getParams.zipWithIndex.foreach(t => t._1.set(preparedStatement)(t._2+1))
-					println("Parameterized with " + p.getParams)
+					logger.debug("Parameterized with " + p.getParams)
 					preparedStatement.executeQuery
 				}
 				case _ => {
-					println("executing non-prepared select:")
-					println(pq.getQuery)
+					logger.debug("executing non-prepared select:")
+					logger.debug(pq.getQuery)
 					val st: Statement = c.createStatement()
 					st.executeQuery(pq.getQuery)
 				}
@@ -61,7 +64,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			}
 			profiler.lap("finsihed rows")
 			val fetchCount: Int = Math.ceil(rowCounter.toDouble / fetchSize.toDouble).toInt
-			if (fetchCount > 2) println(" ***********  QUERY EXECUTED " + fetchCount + " FETCHES!!  Rowcount was " + rowCounter + ":  " + pq.getQuery)
+			if (fetchCount > 2) logger.debug(" ***********  QUERY EXECUTED " + fetchCount + " FETCHES!!  Rowcount was " + rowCounter + ":  " + pq.getQuery)
 			resultObjects.toList
 		})
 	}
@@ -127,9 +130,9 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 	}
 
 	override protected def getObjectsByIdsImplementation[T <: StorableClass](obj: StorableObject[T], ids: List[Int], fieldShutter: Set[DatabaseField[_]], fetchSize: Int): List[T] = {
-		println("#################################################")
-		println("About to get " + ids.length + " instances of " + obj.entityName)
-		println("#################################################")
+		logger.debug("#################################################")
+		logger.debug("About to get " + ids.length + " instances of " + obj.entityName)
+		logger.debug("#################################################")
 		val MAX_IDS_NO_TEMP_TABLE = 50
 
 		if (ids.isEmpty) List.empty
@@ -214,13 +217,13 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			}
 			val sql = sb.toString()
 			withConnection(dbGateway.mainPool)(c => {
-				println("counting objects: ")
-				println(c.hashCode())
-				println(sql)
+				logger.debug("counting objects: ")
+				logger.debug(c.hashCode().toString)
+				logger.debug(sql)
 				val preparedStatement = c.prepareStatement(sql)
 				val preparedParams = params.map(PreparedString)
 				preparedParams.zipWithIndex.foreach(t => t._1.set(preparedStatement)(t._2+1))
-				println("Parameterized with " + preparedParams)
+				logger.debug("Parameterized with " + preparedParams)
 				val rs: ResultSet = preparedStatement.executeQuery
 				rs.next()
 				rs.getInt(1)
@@ -234,13 +237,13 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			val md5: String = MessageDigest.getInstance("MD5").digest(now.getBytes).map("%02x".format(_)).mkString
 			"FILTER_" + md5.substring(0, 10).toUpperCase
 		}
-		println(" ======   Creating filter table " + tableName + "    =======")
+		logger.debug(" ======   Creating filter table " + tableName + "    =======")
 		val p = new Profiler
 		withConnection(dbGateway.tempPool)(c => {
 			val createTableSQL = "CREATE TABLE " + tableName + " (ID Number)"
 			c.createStatement().executeUpdate(createTableSQL)
 			p.lap("Created table")
-			println("about to do " + ids.length + " ids....")
+			logger.debug("about to do " + ids.length + " ids....")
 
 			val ps = c.prepareStatement("INSERT INTO " + tableName + " VALUES (?)")
 			ids.distinct.foreach(i => {
@@ -273,7 +276,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			val dropTableSQL = "DROP TABLE " + tableName + " CASCADE CONSTRAINTS"
 			c.createStatement().executeUpdate(dropTableSQL)
 
-			println(" =======   cleaned up filter table   =======")
+			logger.debug(" =======   cleaned up filter table   =======")
 			val p2 = new Profiler
 			val ret = rows.map(r => obj.construct(r))
 			p2.lap("finished construction")
@@ -288,7 +291,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 		params: Option[List[PreparedValue]] = None,
 		batchParams: Option[List[List[PreparedValue]]] = None,
 	): Option[String] = {
-		println(sql.replace("\t", "\\t"))
+		logger.debug(sql.replace("\t", "\\t"))
 		val pool = if (useTempConnection) dbGateway.tempPool else dbGateway.mainPool
 		withConnection(pool)(c => {
 			if (batchParams.isDefined && pkPersistenceName.isDefined) {
@@ -306,17 +309,17 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 //					println("Parameterized with " + row)
 					ps.addBatch()
 				})
-				println("starting batch")
+				logger.debug("starting batch")
 				val start = System.currentTimeMillis()
 				ps.executeBatch()
 				val end = System.currentTimeMillis()
-				println("finished batch of " + batchParams.get.length + " rows in ms: " + (end-start))
+				logger.debug("finished batch of " + batchParams.get.length + " rows in ms: " + (end-start))
 				// Cant return a PK when there are multiple.  Could someday extend this to return a list of PKs
 				None
 			} else {
 				if (params.isDefined) {
 					params.get.zipWithIndex.foreach(t => t._1.set(ps)(t._2+1))
-					println("Parameterized with " + params.get)
+					logger.debug("Parameterized with " + params.get)
 				}
 				ps.executeUpdate()
 				if (pkPersistenceName.isDefined) {
@@ -330,15 +333,15 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 	}
 
 	private def executeSQLForUpdateOrDelete(sql: String, useTempConnection: Boolean = false, params: Option[List[PreparedValue]] = None): Int = {
-		println(sql)
+		logger.debug(sql)
 		val pool = if (useTempConnection) dbGateway.tempPool else dbGateway.mainPool
 		withConnection(pool)(c => {
-			println("executing prepared update/delete:")
-			println(sql)
+			logger.debug("executing prepared update/delete:")
+			logger.debug(sql)
 			val ps = c.prepareStatement(sql)
 			if (params.isDefined) {
 				params.get.zipWithIndex.foreach(t => t._1.set(ps)(t._2+1))
-				println("Parameterized with " + params.get)
+				logger.debug("Parameterized with " + params.get)
 			}
 			ps.executeUpdate()
 		})
@@ -346,13 +349,13 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 
 	// This has to be parameterized, otherwise the compiler shits itself.  At this point shouldnt be anything but ColumnAlias
 	private def getProtoStorablesFromSelect(sql: String, params: List[String], properties: List[ColumnAlias[_]], fetchSize: Int): List[ProtoStorable] = {
-		println(sql)
+		logger.debug(sql)
 		val profiler = new Profiler
 		withConnection(dbGateway.mainPool)(c => {
 			val preparedStatement = c.prepareStatement(sql)
 			val preparedParams = params.map(PreparedString)
 			preparedParams.zipWithIndex.foreach(t => t._1.set(preparedStatement)(t._2+1))
-			println("Parameterized with " + preparedParams)
+			logger.debug("Parameterized with " + preparedParams)
 			val rs: ResultSet = preparedStatement.executeQuery
 
 			rs.setFetchSize(fetchSize)
@@ -411,7 +414,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 							dateTimeFields += (makeCompilerHappy(ca) -> timestamp.map(_.toLocalDateTime))
 						}
 						case _ => {
-							println(" *********** UNKNOWN COLUMN TYPE FOR COL " + ca)
+							logger.debug(" *********** UNKNOWN COLUMN TYPE FOR COL " + ca)
 						}
 					}
 				}))
@@ -420,7 +423,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			}
 			profiler.lap(s"finished rows (rowcount: ${rowCounter})")
 			val fetchCount: Int = Math.ceil(rowCounter.toDouble / fetchSize.toDouble).toInt
-			if (fetchCount > 2) println(" ***********  QUERY EXECUTED " + fetchCount + " FETCHES!!  Rowcount was " + rowCounter + ":  " + sql)
+			if (fetchCount > 2) logger.debug(" ***********  QUERY EXECUTED " + fetchCount + " FETCHES!!  Rowcount was " + rowCounter + ":  " + sql)
 			rows.toList
 		})
 	}
@@ -460,7 +463,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			}
 		})
 		val i = is.head
-		println("inserting woooo")
+		logger.debug("inserting woooo")
 
 		def getFieldValues(vm: Map[String, FieldValue[_]]): List[FieldValue[_]] =
 			vm.values
@@ -503,7 +506,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 		sb.append(") VALUES (")
 		sb.append(values.mkString(", "))
 		sb.append(")")
-		println(sb.toString())
+		logger.debug(sb.toString())
 		if (is.size > 1) {
 			val batchParams = Some(allFieldValues.map(rfv => rfv.flatMap(fv => fv.getPersistenceLiteral._2).map(PreparedString)))
 			executeSQLForInsert(sb.toString(), None, false, None, batchParams) match {
@@ -546,7 +549,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			getFieldValues(i.nullableDoubleValueMap)
 
 		if (fieldValues.isEmpty) {
-			println("NOOP update")
+			logger.debug("NOOP update")
 		} else {
 			val sb = new StringBuilder()
 			sb.append("UPDATE " + i.companion.entityName + " SET ")
@@ -608,7 +611,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			  |$whereClause
 			  |""".stripMargin
 
-		println("QueryBuilder SQL: " + sql)
+		logger.debug("QueryBuilder SQL: " + sql)
 
 		getProtoStorablesFromSelect(sql, params, fields, fetchSize).map(ps => new QueryBuilderResultRow(ps))
 	}
@@ -616,7 +619,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 	 override protected def executeProcedureImpl[T](pc: PreparedProcedureCall[T]): T = {
 		val pool = if (pc.useTempSchema) dbGateway.tempPool else dbGateway.mainPool
 		withConnection(pool)(conn => {
-			println("STARTING PROCEDURE CALL: " + pc.getQuery)
+			logger.debug("STARTING PROCEDURE CALL: " + pc.getQuery)
 			val callable: CallableStatement = conn.prepareCall(s"{call ${pc.getQuery}}")
 
 			// register outs and inouts
@@ -625,17 +628,17 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			}))
 
 			pc.setInParametersInt.foreach(Function.tupled((paramName: String, value: Int) => {
-				println(s"$paramName = $value")
+				logger.debug(s"$paramName = $value")
 				callable.setInt(paramName, value)
 			}))
 
 			pc.setInParametersVarchar.foreach(Function.tupled((paramName: String, value: String) => {
-				println(s"$paramName = $value")
+				logger.debug(s"$paramName = $value")
 				callable.setString(paramName, value)
 			}))
 
 			pc.setInParametersDouble.foreach(Function.tupled((paramName: String, value: Double) => {
-				println(s"$paramName = $value")
+				logger.debug(s"$paramName = $value")
 				callable.setDouble(paramName, value)
 			}))
 
@@ -668,7 +671,7 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 	override protected def deleteObjectsByIdsImplementation[T <: StorableClass](obj: StorableObject[T], ids: List[Int]): Unit = {
 		if (ids.nonEmpty) {
 			val sql = "DELETE FROM " + obj.entityName + " WHERE " + obj.primaryKey.persistenceFieldName + " IN (" + ids.mkString(",") + ")"
-			println(sql)
+			logger.debug(sql)
 			executeSQLForUpdateOrDelete(sql, false, None)
 		}
 	}

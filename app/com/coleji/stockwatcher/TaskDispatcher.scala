@@ -2,15 +2,17 @@ package com.coleji.stockwatcher
 
 import com.coleji.neptune.Core.PermissionsAuthority
 import com.coleji.stockwatcher.task.{FetchDailyOHLCsTask, FetchDividendsTask, FetchFinancialsTask, FetchSplitsTask}
+import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 
-import java.time.{LocalTime, ZonedDateTime}
+import java.time.ZonedDateTime
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import scala.collection.mutable
 import scala.concurrent.Future
 
 class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	val taskNextRuntimes: mutable.Map[StockWatcherTask, ZonedDateTime] = mutable.Map(
 		(FetchFinancialsTask, FetchFinancialsTask.getNextRuntime),
 		(FetchDividendsTask, FetchDividendsTask.getNextRuntime),
@@ -18,11 +20,11 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 		(FetchDailyOHLCsTask, FetchDailyOHLCsTask.getNextRuntime)
 	)
 
-	println("TASK SCHEDULE: ")
-	println(taskNextRuntimes)
+	logger.info("TASK SCHEDULE: ")
+	logger.info(taskNextRuntimes.toString())
 
 	lifecycle.addStopHook(() => Future.successful({
-		println("****************************    Stop hook: stopping tasks  **********************")
+		logger.info("****************************    Stop hook: stopping tasks  **********************")
 		TaskDispatcher.shutDownRequested.set(true)
 	}))
 
@@ -34,19 +36,19 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 //		})
 		if (!TaskDispatcher.tasksRunning.get()) {
 			TaskDispatcher.tasksRunning.set(true)
-			println("TaskDispatcher.start()")
+			logger.info("TaskDispatcher.start()")
 			while ((!RUN_ONLY_ONCE || !didRun) && !TaskDispatcher.shutDownRequested.get()) {
 				loop()
 				didRun=true
 				Thread.sleep(3000)
 			}
-			println("TaskDispatcher stopped for shutdown!")
+			logger.info("TaskDispatcher stopped for shutdown!")
 		}
 	}
 
 
 	private def loop()(implicit PA: PermissionsAuthority): Unit = {
-		println("Looking for tasks to run....")
+		logger.info("Looking for tasks to run....")
 		taskNextRuntimes.find(t => t._2.isBefore(ZonedDateTime.now())) match {
 			case Some((task, _)) => {
 				task.run(PA.rootRC.assertUnlocked)
@@ -54,7 +56,7 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 			}
 			case None =>
 		}
-		println(taskNextRuntimes)
+		logger.info(taskNextRuntimes.toString())
 	}
 }
 

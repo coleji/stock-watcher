@@ -2,12 +2,14 @@ package com.coleji.neptune.Core.Boot
 
 import com.coleji.neptune.Core._
 import com.coleji.neptune.Util.PropertiesWrapper
+import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 import redis.clients.jedis.JedisPool
 
 import scala.concurrent.Future
 
 object ServerBootLoader {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	val DB_DRIVER_ORACLE = "oracle"
 	val DB_DRIVER_MYSQL = "mysql"
 
@@ -21,7 +23,7 @@ object ServerBootLoader {
 		} catch {
 			case e: Exception => {
 				if (attempts < MAX_ATTEMPTS) {
-					println("failed to get pools, sleeping and trying again....")
+					logger.warn("failed to get pools, sleeping and trying again....")
 					Thread.sleep(1000)
 					getDBPools(dbDriver, attempts + 1)
 				} else {
@@ -42,9 +44,9 @@ object ServerBootLoader {
 	): PermissionsAuthority = {
 		if (PermissionsAuthority.isBooted) PermissionsAuthority.PA
 		else {
-			println(" ***************     BOOTING UP SERVER   ***************  ")
-			println(System.getProperty("java.vendor") + " - " + System.getProperty("java.version"))
-			println(System.getProperty("java.home"))
+			logger.info(" ***************     BOOTING UP SERVER   ***************  ")
+			logger.info(System.getProperty("java.vendor") + " - " + System.getProperty("java.version"))
+			logger.info(System.getProperty("java.home"))
 
 			// Get server instance properties
 			val paramFile = new PropertiesWrapper("conf/private/server-properties", requiredProperties)
@@ -61,13 +63,13 @@ object ServerBootLoader {
 				case _ => DB_DRIVER_ORACLE
 			}
 
-			println("Using DB Driver: " + dbDriver)
+			logger.info("Using DB Driver: " + dbDriver)
 
 			val dbConnection = getDBPools(dbDriver)
 			val redisPool = new JedisPool(paramFile.getOptionalString("RedisHost").getOrElse("localhost"), 6379)
 			lifecycle match {
 				case Some(lc) => lc.addStopHook(() => Future.successful({
-					println("****************************    Stop hook: closing pools  **********************")
+					logger.info("****************************    Stop hook: closing pools  **********************")
 					dbConnection.close()
 				}))
 				case None =>
@@ -77,7 +79,7 @@ object ServerBootLoader {
 			val forceReadOnlyDatabase = paramFile.getOptionalString("ForceReadOnlyDatabase").getOrElse("false").equals("true")
 
 			val doReadOnlyDatabase = readOnlyDatabase || forceReadOnlyDatabase
-			println("ready only database? " + doReadOnlyDatabase)
+			logger.info("ready only database? " + doReadOnlyDatabase)
 
 			new PermissionsAuthority(
 				systemParams = SystemServerParameters(

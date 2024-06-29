@@ -3,11 +3,13 @@ package com.coleji.stockwatcher
 import com.coleji.neptune.Core.PermissionsAuthority
 import com.coleji.neptune.Util.Initializable
 import jakarta.mail.internet.{InternetAddress, MimeBodyPart, MimeMessage, MimeMultipart}
-import jakarta.mail.{Address, Authenticator, Message, Multipart, PasswordAuthentication, Session, Transport}
+import jakarta.mail._
+import org.slf4j.LoggerFactory
 
 import java.util.Properties
 
 object SmtpEmailer {
+	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	val prop = new Properties
 	prop.setProperty("mail.smtp.auth", "true")
 	prop.setProperty("mail.smtp.starttls.enable", "true")
@@ -38,8 +40,8 @@ object SmtpEmailer {
 
 		message.setContent(multipart)
 
-		println("sending email...")
+		logger.debug("sending email...")
 		Transport.send(message)
-		println("sent!")
+		logger.debug("sent!")
 	}
 }
