@@ -3,14 +3,16 @@ package com.coleji.stockwatcher.task
 import com.coleji.neptune.Core.UnlockedRequestCache
 import com.coleji.neptune.IO.PreparedQueries.PreparedQueryForSelect
 import com.coleji.neptune.Storable.ResultSetWrapper
-import com.coleji.neptune.Util.StringUtil
+import com.coleji.neptune.Util.{DateUtil, StringUtil}
 import com.coleji.stockwatcher.StockWatcherTask
 import com.coleji.stockwatcher.entity.entitydefinitions.{PolygonFinancial, PolygonFinancialEvent, PolygonFinancialEventTicker}
 import com.coleji.stockwatcher.remoteapi.polygon.financials.{DtoFinancialsEvent, Financials}
 
-import java.time.LocalDate
+import java.time.{LocalDate, ZonedDateTime}
 
 object FetchFinancialsTask extends StockWatcherTask {
+	override def getNextRuntime: ZonedDateTime = DateUtil.setHour(ZonedDateTime.now().plusDays(1), API_FETCH_HOUR)
+
 	protected override def taskAction(rc: UnlockedRequestCache): Unit = {
 		val latestFilingQ = new PreparedQueryForSelect[LocalDate](Set(rc.companion)) {
 

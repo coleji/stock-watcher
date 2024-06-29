@@ -22,7 +22,7 @@ class BootLoader @Inject()(lifecycle: ApplicationLifecycle, taskDispatcher: Task
 	val PA = this.init(lifecycle, BootLoader.ENTITY_PACKAGE_PATH, List.empty,  requiredProperties, paPostBoot)
 	println("about to start task thread")
 	val taskThread = new Thread(() => {
-		taskDispatcher.start(PA)
+		taskDispatcher.start()
 	})
 	taskThread.setName("Task Runner")
 	taskThread.start()

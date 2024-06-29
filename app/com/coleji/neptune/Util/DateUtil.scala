@@ -48,4 +48,7 @@ object DateUtil {
 	}
 
 	def getTimestamp(ldt: LocalDateTime): Long = toBostonTime(ldt).toEpochSecond
+
+	def setHour(zdt: ZonedDateTime, hour: Int): ZonedDateTime =
+		zdt.withZoneSameLocal(HOME_TIME_ZONE).withHour(hour).withMinute(0).withSecond(0).withNano(0)
 }
