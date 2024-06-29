@@ -55,3 +55,5 @@ libraryDependencies += "org.apache.httpcomponents.client5" % "httpclient5" % "5.
 
 // https://mvnrepository.com/artifact/com.opencsv/opencsv
 libraryDependencies += "com.opencsv" % "opencsv" % "5.9"
+
+libraryDependencies += "org.eclipse.angus" % "angus-mail" % "2.0.2"

@@ -13,6 +13,16 @@ class Initializable[T] extends Serializable {
 		case None => fallback
 	}
 
+	def trySet(t: ()=>T): T = synchronized {
+		value match {
+			case Some(t) => t
+			case None => {
+				value = Some(t())
+				value.get
+			}
+		}
+	}
+
 	def set(t: T): T = synchronized {
 		value match {
 			case None => {
