@@ -20,7 +20,7 @@ trait StockWatcherTask {
 			logger.info("------------------------------")
 			logger.info("| TASK LOG")
 			logger.info("------------------------------")
-			logger.info(log.toString())
+			log.toString().split("\n").foreach(logger.info)
 		}
 	}
 

@@ -3,10 +3,12 @@ package com.coleji.neptune.Util
 class Profiler {
 	private var stamp: Long = System.currentTimeMillis()
 
-	def lap(s: String): Long = {
+	def lap(s: String): Long = lap(s, _ => {})
+
+	def lap(s: String, print: String => Unit): Long = {
 		val now = System.currentTimeMillis()
 		val diff = now - stamp
-		println(s + ": " + diff)
+		print(s + ": " + diff)
 		stamp = now
 		diff
 	}
