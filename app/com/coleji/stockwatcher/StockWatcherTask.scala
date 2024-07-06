@@ -18,7 +18,7 @@ trait StockWatcherTask {
 			taskAction(rc)
 		} finally {
 			logger.info("------------------------------")
-			logger.info("| TASK LOG")
+			logger.info("| TASK LOG " + this.getClass.getCanonicalName)
 			logger.info("------------------------------")
 			log.toString().split("\n").foreach(logger.info)
 		}

@@ -60,9 +60,9 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 		while (foundTask) {
 			taskNextRuntimes.find(t => t._2.isBefore(ZonedDateTime.now())) match {
 				case Some((task, _)) => {
-					logger.info("<<<<<<<<<<<<    STARTING TASK")
+					logger.info("<<<<<<<<<<<<    STARTING TASK " + task.getClass.getCanonicalName)
 					task.run(PA.rootRC.assertUnlocked)
-					logger.info(">>>>>>>>>>>>  FINISHED TASK")
+					logger.info(">>>>>>>>>>>>  FINISHED TASK " + task.getClass.getCanonicalName)
 					taskNextRuntimes(task) = task.getNextRuntime
 				}
 				case None => foundTask = false
