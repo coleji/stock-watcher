@@ -8,6 +8,7 @@ import java.time.ZonedDateTime
 trait StockWatcherTask {
 	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	val API_FETCH_HOUR = 1
+	val API_CALC_HOUR = 3
 
 	protected var log = new StringBuilder()
 	protected def appendLog(s: String): StringBuilder = log.append("| ").append(s).append("\n")

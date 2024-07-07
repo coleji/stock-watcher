@@ -1,7 +1,7 @@
 package com.coleji.stockwatcher
 
 import com.coleji.neptune.Core.PermissionsAuthority
-import com.coleji.stockwatcher.task.{FetchDailyOHLCsTask, FetchDividendsTask, FetchFinancialsTask, FetchSplitsTask}
+import com.coleji.stockwatcher.task.{CalcEpsTask, FetchDailyOHLCsTask, FetchDividendsTask, FetchFinancialsTask, FetchSplitsTask}
 import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 
@@ -17,7 +17,9 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 		(FetchFinancialsTask, FetchFinancialsTask.getNextRuntime),
 		(FetchDividendsTask, FetchDividendsTask.getNextRuntime),
 		(FetchSplitsTask, FetchSplitsTask.getNextRuntime),
-		(FetchDailyOHLCsTask, FetchDailyOHLCsTask.getNextRuntime)
+		(FetchDailyOHLCsTask, FetchDailyOHLCsTask.getNextRuntime),
+
+		(CalcEpsTask, CalcEpsTask.getNextRuntime),
 	)
 
 	logger.info("TASK SCHEDULE: ")
