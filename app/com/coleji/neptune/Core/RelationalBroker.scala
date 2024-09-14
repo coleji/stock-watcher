@@ -182,9 +182,11 @@ abstract class RelationalBroker private[Core](dbGateway: DatabaseGateway, prepar
 			}
 			orderBy match {
 				case Some(f) => sb.append(" ORDER BY " + f.persistenceFieldName + (if (orderByDesc) " DESC" else " ASC"))
+				case None =>
 			}
 			limit match {
 				case Some(l) => sb.append(" LIMIT " + l)
+				case None =>
 			}
 			val rows: List[ProtoStorable] = getProtoStorablesFromSelect(
 				sb.toString(),
