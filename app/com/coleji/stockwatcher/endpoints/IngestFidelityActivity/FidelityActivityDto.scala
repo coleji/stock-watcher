@@ -3,8 +3,9 @@ package com.coleji.stockwatcher.endpoints.IngestFidelityActivity
 import java.time.LocalDate
 
 case class FidelityActivityDto(
+	amountExcluded: Option[Int],
 	runDate: LocalDate,
-	account: String,
+//	account: String,
 	action: String,
 	symbol: Option[String],
 	description: String,

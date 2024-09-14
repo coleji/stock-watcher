@@ -18,6 +18,7 @@ import scala.concurrent.ExecutionContext
 class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext) extends InjectedController {
 	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	def post()(implicit PA: PermissionsAuthority): Action[RawBuffer] = Action(parse.raw) { req => {
+		logger.info("========================================== starting")
 		val file = req.body.asFile
 		val bytes = (new FileInputStream(file)).readAllBytes().toList
 
@@ -35,18 +36,24 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 
 		val csvParser = new RFC4180ParserBuilder()
 			.withSeparator(',')
-			.withQuoteChar('"')
+//			.withQuoteChar('"')
 			.build
 		val csvReader = new CSVReaderBuilder(new StringReader(s)).withCSVParser(csvParser).build
 
 		val headers = nextNonEmptyLine(csvReader).get
 		val rawRows = collectRows(csvReader, List.empty)
+
+		logger.info("rows: "+rawRows.size)
+		logger.info(headers.toString())
+		logger.info(headers.size+"")
+		logger.info(csvReader.getLinesRead+"")
 		val rows = rawRows.map(row => {
-			val map = row.zipWithIndex.filter(t => t._2 < 17).map(t => headers(t._2) -> t._1.trim).toMap
+			val map = row.zipWithIndex.filter(t => t._2 < 18).map(t => headers(t._2) -> t._1.trim).toMap
 
 			FidelityActivityDto(
-				runDate = LocalDate.parse(map("Run Date"), DateTimeFormatter.ofPattern("MMM-dd-yyyy")),
-				account = map("Account"),
+				amountExcluded = StringUtil.optionNoEmptyString(map("Amt Excluded")).flatMap(_.toIntOption),
+				runDate = LocalDate.parse(map("Run Date"), DateTimeFormatter.ofPattern("MM/dd/yyyy")),
+//				account = map("Account"),
 				action = map("Action"),
 				symbol = StringUtil.optionNoEmptyString(map("Symbol")),
 				description = map("Description"),
@@ -62,34 +69,53 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 				accruedInterest = StringUtil.optionNoEmptyString(map("Accrued Interest")).flatMap(_.toDoubleOption),
 				amount = map("Amount").toDouble,
 				settlementDate = StringUtil.optionNoEmptyString(map("Settlement Date"))
-					.map(d => LocalDate.parse(d, DateTimeFormatter.ofPattern("MMM-dd-yyyy")))
+					.map(d => LocalDate.parse(d, DateTimeFormatter.ofPattern("MM/dd/yyyy")))
 			)
 		})
 
-		var owned: mutable.Map[String, Int] = mutable.Map.empty
+		val buys: mutable.Map[String, List[FidelityActivityDto]] = mutable.Map.empty
+		val sells: mutable.Map[String, List[FidelityActivityDto]] = mutable.Map.empty
+		val tickers: mutable.Set[String] = mutable.Set.empty
 
+		val tickerRegex = "^[A-Z]*[^X]$".r
 
-		rows.reverse.filter(_.account.startsWith("Individual")).foreach(r => {
-			if (r.symbol.isDefined && r.symbol.get == "VTI") logger.debug(r.toString)
-			if (r.action.startsWith("YOU BOUGHT") && r.symbol.nonEmpty) {
-				logger.debug("buy")
-				val sym = r.symbol.get
-				val existing = owned.getOrElse(sym, 0)
-				owned(sym) = existing + r.quantity.get.toInt
-			} else if (r.action.startsWith("YOU SOLD") && r.symbol.nonEmpty) {
-				logger.debug("sell")
-				val sym = r.symbol.get
-				val existing = owned.getOrElse(sym, 0)
-				val newTotal = existing + r.quantity.get.toInt
-				if (newTotal < 0) logger.debug(s"sold ${r.quantity} of ${r.symbol} new total is ${newTotal}")
-				else owned(sym) = newTotal
-
+		rows.reverse/*.filter(_.account.startsWith("Individual"))*/.filter(r => tickerRegex.matches(r.symbol.getOrElse(""))).foreach(r => {
+			val sym = r.symbol.get
+			tickers.add(sym)
+			if (
+				r.action.startsWith("YOU BOUGHT") &&
+				r.symbol.nonEmpty
+			) {
+				val thisBuys = buys.getOrElse(sym, List.empty)
+				buys(sym) = r :: thisBuys
+			} else if (
+				r.action.startsWith("YOU SOLD") &&
+				r.symbol.nonEmpty
+			) {
+				val thisSells = sells.getOrElse(sym, List.empty)
+				sells(sym) = r :: thisSells
 			} //else logger.debug(r.action)
-			logger.debug(owned.get("VTI").toString)
 		})
 
+		tickers.toList.sorted.foreach(sym => {
+//			logger.info(sym)
+			val thisBuys = buys.getOrElse(sym, List.empty)
+			val thisSells = sells.getOrElse(sym, List.empty)
+			thisBuys.foreach(dto => {
+				if (dto.amountExcluded.getOrElse(0) > 0) logger.info("Excluded buy (typo)" + dto.toString)
+//				if (dto.symbol.getOrElse("") == "VOO") logger.info("Buy VOO " + dto.runDate + " " + dto.quantity.getOrElse(0d))
+			})
+			thisSells.foreach(dto => {
+				val excluded = dto.amountExcluded.getOrElse(0).toDouble
+				if (excluded > -1*dto.quantity.getOrElse(0d)) logger.info("excluded>sold " + dto.toString)
+//				if (dto.symbol.getOrElse("") == "VOO") logger.info("Sell VOO " + dto.runDate + " " + ((-1 * dto.quantity.getOrElse(0d)) - dto.amountExcluded.getOrElse(0).toDouble))
+//				if (dto.symbol.getOrElse("") == "VOO" &&  dto.amountExcluded.getOrElse(0).toDouble> 0 ) logger.info("Excluded VOO " + dto.runDate + " " + dto.amountExcluded.getOrElse(0).toDouble)
 
-		logger.debug(owned.filter(t => t._2 > 0).toString())
+			})
+			val buyCount = thisBuys.foldLeft(0d)((agg, dto) => agg + dto.quantity.getOrElse(0d))
+			val sellCount = thisSells.foldLeft(0d)((agg, dto) => agg + (-1 * dto.quantity.getOrElse(0d)) - dto.amountExcluded.getOrElse(0).toDouble)
+			if (sellCount != buyCount) logger.info(sym + ": buys-sells is " + (buyCount-sellCount))
+		})
 
 		Ok("hi")
 	}}
@@ -98,7 +124,7 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 	private def nextNonEmptyLine(csvReader: CSVReader): Option[List[String]] = {
 		var line: Option[List[String]] = Some(List.empty)
 		while (line.nonEmpty && !line.get.exists(_ != "")) {
-			line = Option(csvReader.readNext).map(_.toList)
+			line = Option(csvReader.readNext()).map(_.toList)
 		}
 		line
 	}
