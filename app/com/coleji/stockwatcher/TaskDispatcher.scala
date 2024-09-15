@@ -1,6 +1,7 @@
 package com.coleji.stockwatcher
 
 import com.coleji.neptune.Core.PermissionsAuthority
+import com.coleji.stockwatcher.TaskDispatcher.{RUN_MODE_ONCE, RUN_MODE_SCHEDULE}
 import com.coleji.stockwatcher.task.{CalcEpsTask, FetchDailyOHLCsTask, FetchDividendsTask, FetchFinancialsTask, FetchSplitsTask}
 import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
@@ -13,7 +14,8 @@ import scala.concurrent.Future
 
 class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 	private val logger = LoggerFactory.getLogger(this.getClass.getName)
-	val taskNextRuntimes: mutable.Map[StockWatcherTask, ZonedDateTime] = mutable.Map(
+
+	private var taskNextRuntimes: mutable.Map[StockWatcherTask, ZonedDateTime] = mutable.Map(
 		(FetchFinancialsTask, FetchFinancialsTask.getNextRuntime),
 		(FetchDividendsTask, FetchDividendsTask.getNextRuntime),
 		(FetchSplitsTask, FetchSplitsTask.getNextRuntime),
@@ -23,7 +25,6 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 	)
 
 	logger.info("TASK SCHEDULE: ")
-	logger.info(taskNextRuntimes.toString())
 
 	lifecycle.addStopHook(() => Future.successful({
 		logger.info("****************************    Stop hook: stopping tasks  **********************")
@@ -32,21 +33,30 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 
 	def start()(implicit PA: PermissionsAuthority): Unit = {
 		var didRun = false
-		val RUN_ONLY_ONCE = PA.customParams.getString("task-runner-only-once").toBoolean
-		logger.info("Run once? " + RUN_ONLY_ONCE)
-		////////////////////////////////////
-		// force them all to run now
+		val runMode = PA.customParams.getString("task-runner-mode").toInt
 
-		if (RUN_ONLY_ONCE) {
-			taskNextRuntimes.foreach(t => {
-				taskNextRuntimes(t._1) = ZonedDateTime.now().minusHours(1)
-			})
+		if (runMode == RUN_MODE_ONCE) {
+			// if running once, force them all to run now
+			println(taskNextRuntimes.size)
+			taskNextRuntimes = taskNextRuntimes.map(t => (t._1, ZonedDateTime.now().minusHours(1)))
+//			taskNextRuntimes.foreach(t => {
+//				println("updating " + t._1.getClass.getCanonicalName)
+//				taskNextRuntimes(t._1) =
+//			})
 		}
-		/////////////////////
+
+		logger.info(taskNextRuntimes.toString())
+
 		if (!TaskDispatcher.tasksRunning.get()) {
 			TaskDispatcher.tasksRunning.set(true)
 			logger.info("TaskDispatcher.start()")
-			while ((!RUN_ONLY_ONCE || !didRun) && !TaskDispatcher.shutDownRequested.get()) {
+			while (
+				(
+					runMode == RUN_MODE_SCHEDULE ||
+					(runMode == RUN_MODE_ONCE && !didRun)
+				) &&
+				!TaskDispatcher.shutDownRequested.get()
+			) {
 				loop()
 				didRun=true
 				Thread.sleep(3000)
@@ -60,22 +70,28 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 		logger.info("Looking for tasks to run....")
 		var foundTask = true
 		while (foundTask) {
+			println("tasks: " + taskNextRuntimes.size)
+			println("matching tasks: " + taskNextRuntimes.count(t => t._2.isBefore(ZonedDateTime.now())))
 			taskNextRuntimes.find(t => t._2.isBefore(ZonedDateTime.now())) match {
 				case Some((task, _)) => {
+					val start = System.currentTimeMillis()
 					logger.info("<<<<<<<<<<<<    STARTING TASK " + task.getClass.getCanonicalName)
-					task.run(PA.rootRC.assertUnlocked)
-					logger.info(">>>>>>>>>>>>  FINISHED TASK " + task.getClass.getCanonicalName)
+					PA.rootRC.withTransaction(() => Right(task.run(PA.rootRC.assertUnlocked)))
+					logger.info(">>>>>>>>>>>>  FINISHED TASK " + task.getClass.getCanonicalName + "; runtime " + (System.currentTimeMillis() - start))
 					taskNextRuntimes(task) = task.getNextRuntime
 				}
 				case None => foundTask = false
 			}
 		}
-		logger.info(taskNextRuntimes.toString()
-		)
+		logger.info(taskNextRuntimes.toString())
 	}
 }
 
 object TaskDispatcher {
-	private var shutDownRequested = new AtomicBoolean(false)
-	private var tasksRunning = new AtomicBoolean(false)
+	private val shutDownRequested = new AtomicBoolean(false)
+	private val tasksRunning = new AtomicBoolean(false)
+
+	val RUN_MODE_OFF: Int = 0
+	val RUN_MODE_ONCE: Int = 1
+	val RUN_MODE_SCHEDULE: Int = 2
 }

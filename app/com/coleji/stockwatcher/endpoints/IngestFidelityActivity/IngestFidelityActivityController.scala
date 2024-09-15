@@ -2,6 +2,7 @@ package com.coleji.stockwatcher.endpoints.IngestFidelityActivity
 
 import com.coleji.neptune.Core.PermissionsAuthority
 import com.coleji.neptune.Util.StringUtil
+import com.coleji.stockwatcher.SmtpEmailer
 import com.opencsv.{CSVReader, CSVReaderBuilder, RFC4180ParserBuilder}
 import org.apache.hc.client5.http.utils.Hex
 import org.slf4j.LoggerFactory
@@ -110,12 +111,13 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 				if (excluded > -1*dto.quantity.getOrElse(0d)) logger.info("excluded>sold " + dto.toString)
 //				if (dto.symbol.getOrElse("") == "VOO") logger.info("Sell VOO " + dto.runDate + " " + ((-1 * dto.quantity.getOrElse(0d)) - dto.amountExcluded.getOrElse(0).toDouble))
 //				if (dto.symbol.getOrElse("") == "VOO" &&  dto.amountExcluded.getOrElse(0).toDouble> 0 ) logger.info("Excluded VOO " + dto.runDate + " " + dto.amountExcluded.getOrElse(0).toDouble)
-
 			})
 			val buyCount = thisBuys.foldLeft(0d)((agg, dto) => agg + dto.quantity.getOrElse(0d))
 			val sellCount = thisSells.foldLeft(0d)((agg, dto) => agg + (-1 * dto.quantity.getOrElse(0d)) - dto.amountExcluded.getOrElse(0).toDouble)
 			if (sellCount != buyCount) logger.info(sym + ": buys-sells is " + (buyCount-sellCount))
 		})
+
+		SmtpEmailer.sendEmail("Test email", "Test email body")
 
 		Ok("hi")
 	}}
