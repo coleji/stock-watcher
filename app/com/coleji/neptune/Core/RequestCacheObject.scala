@@ -9,8 +9,7 @@ abstract class RequestCacheObject[T <: RequestCache] {
 	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 
 	val EMPTY_NONCE = "$EMPTY_AUTH_NONCE$"
-	val SEC_COOKIE_NAME_PUBLIC = "CBIDB-SEC"
-	val SEC_COOKIE_NAME_STAFF = "CBIDB-SEC-STAFF"
+	val SEC_COOKIE_NAME_PUBLIC = "NEPTUNE-SEC"
 
 	def create(userName: String, serverParams: PropertiesWrapper, dbGateway: DatabaseGateway, redisPool: JedisPool): T
 

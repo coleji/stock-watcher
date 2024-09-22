@@ -1,20 +1,13 @@
 FROM eclipse-temurin:17-jdk-focal
-RUN apt-get update
-RUN apt-get install ssmtp -y
-RUN mkdir /app
-COPY CBI-DB-API_0.1.0_all.deb /app/
-RUN dpkg -i /app/CBI-DB-API_0.1.0_all.deb
-COPY py-build-routes.py /usr/share/cbi-db-api/
-CMD cd /usr/share/cbi-db-api && \
-cp /mnt/conf/ssmtp.conf /etc/ssmtp/ && \
-cp /mnt/conf/revaliases /etc/ssmtp/ && \
+WORKDIR /app
+COPY target/stock-watcher_0.1.0_all.deb /app/
+RUN dpkg -i /app/stock-watcher_0.1.0_all.deb
+CMD cd /usr/share/stock-watcher && \
 mkdir -p conf/private && \
 cp /mnt/conf/server-properties conf/private/server-properties && \
-cp /mnt/conf/oracle-credentials conf/private/oracle-credentials && \
-touch /mnt/conf/ora-wallet && cp /mnt/conf/ora-wallet conf/private/ora-wallet -r && \
-touch /usr/share/cbi-db-api/RUNNING_PID && \
-rm /usr/share/cbi-db-api/RUNNING_PID && \
-exec cbi-db-api \
+touch /usr/share/stock-watcher/RUNNING_PID && \
+rm /usr/share/stock-watcher/RUNNING_PID && \
+exec stock-watcher \
   -J-Djava.security.egd=file:/dev/./urandom \
   -Dplay.http.secret.key=$PLAY_SECRET \
   -Dconfig.resource=conf/application.conf

@@ -13,7 +13,7 @@ class SSMTPEmailer private[Core](alwaysSendTo: Option[String]) extends Emailer {
 //			case None => to
 //		}
 
-		val command = "ssmtp " + to + " -F CBI-API"
+		val command = "ssmtp " + to + " -F API"
 		val stdin = "Subject: " + subject + "\n\n" + body
 		logger.info(command)
 		ShellManager.execute(command, None, Some(20000), None, Some(stdin))

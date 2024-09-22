@@ -49,7 +49,8 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 
 		if (!TaskDispatcher.tasksRunning.get()) {
 			TaskDispatcher.tasksRunning.set(true)
-			logger.info("TaskDispatcher.start()")
+			logger.info("*** TaskDispatcher.start()")
+			var count = 0
 			while (
 				(
 					runMode == RUN_MODE_SCHEDULE ||
@@ -57,7 +58,8 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 				) &&
 				!TaskDispatcher.shutDownRequested.get()
 			) {
-				loop()
+				loop(count)
+				count = count+1
 				didRun=true
 				Thread.sleep(3000)
 			}
@@ -66,24 +68,30 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 	}
 
 
-	private def loop()(implicit PA: PermissionsAuthority): Unit = {
-		logger.info("Looking for tasks to run....")
+	private def loop(count: Int)(implicit PA: PermissionsAuthority): Unit = {
+//		logger.info("Looking for tasks to run....")
 		var foundTask = true
 		while (foundTask) {
-			println("tasks: " + taskNextRuntimes.size)
-			println("matching tasks: " + taskNextRuntimes.count(t => t._2.isBefore(ZonedDateTime.now())))
+//			println("tasks: " + taskNextRuntimes.size)
+//			println("matching tasks: " + taskNextRuntimes.count(t => t._2.isBefore(ZonedDateTime.now())))
 			taskNextRuntimes.find(t => t._2.isBefore(ZonedDateTime.now())) match {
 				case Some((task, _)) => {
 					val start = System.currentTimeMillis()
 					logger.info("<<<<<<<<<<<<    STARTING TASK " + task.getClass.getCanonicalName)
 					PA.rootRC.withTransaction(() => Right(task.run(PA.rootRC.assertUnlocked)))
 					logger.info(">>>>>>>>>>>>  FINISHED TASK " + task.getClass.getCanonicalName + "; runtime " + (System.currentTimeMillis() - start))
+					logger.info(ZonedDateTime.now().toString)
 					taskNextRuntimes(task) = task.getNextRuntime
 				}
 				case None => foundTask = false
 			}
 		}
-		logger.info(taskNextRuntimes.toString())
+		if (count % 200 == 0) {
+			taskNextRuntimes.foreach(t => {
+				logger.info(t._2 + " => " + t._1.getClass.getSimpleName)
+			})
+
+		}
 	}
 }
 
