@@ -19,6 +19,7 @@ import scala.concurrent.ExecutionContext
 class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext) extends InjectedController {
 	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	def post()(implicit PA: PermissionsAuthority): Action[RawBuffer] = Action(parse.raw) { req => {
+		val rc = PA.rootRC // use a real one
 		logger.info("========================================== starting")
 		val file = req.body.asFile
 		val bytes = (new FileInputStream(file)).readAllBytes().toList
@@ -53,11 +54,11 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 
 			FidelityActivityDto(
 				amountExcluded = StringUtil.optionNoEmptyString(map("Amt Excluded")).flatMap(_.toIntOption),
-				runDate = LocalDate.parse(map("Run Date"), DateTimeFormatter.ofPattern("MM/dd/yyyy")),
+				runDate = LocalDate.parse(map("Run Date").trim(), DateTimeFormatter.ofPattern("MM/dd/yyyy")),
 //				account = map("Account"),
-				action = map("Action"),
-				symbol = StringUtil.optionNoEmptyString(map("Symbol")),
-				description = map("Description"),
+				action = map("Action").trim(),
+				symbol = StringUtil.optionNoEmptyString(map("Symbol").trim()),
+				description = map("Description").trim(),
 				`type` = StringUtil.optionNoEmptyString(map("Type")),
 				exchangeQuantity = StringUtil.optionNoEmptyString(map("Exchange Quantity")).map(_.toInt),
 				exchangeCurrency = StringUtil.optionNoEmptyString(map("Exchange Currency")),
@@ -89,12 +90,16 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 			) {
 				val thisBuys = buys.getOrElse(sym, List.empty)
 				buys(sym) = r :: thisBuys
+				val storable = r.toStorable()
+				rc.commitObjectToDatabase(storable)
 			} else if (
 				r.action.startsWith("YOU SOLD") &&
 				r.symbol.nonEmpty
 			) {
 				val thisSells = sells.getOrElse(sym, List.empty)
 				sells(sym) = r :: thisSells
+				val storable = r.toStorable()
+				rc.commitObjectToDatabase(storable)
 			} //else logger.debug(r.action)
 		})
 
@@ -117,7 +122,7 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 			if (sellCount != buyCount) logger.info(sym + ": buys-sells is " + (buyCount-sellCount))
 		})
 
-		SmtpEmailer.sendEmail("Test email", "Test email body")
+//		SmtpEmailer.sendEmail("Test email", "Test email body")
 
 		Ok("hi")
 	}}
