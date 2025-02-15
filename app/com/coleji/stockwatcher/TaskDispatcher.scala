@@ -2,7 +2,7 @@ package com.coleji.stockwatcher
 
 import com.coleji.neptune.Core.PermissionsAuthority
 import com.coleji.stockwatcher.TaskDispatcher.{RUN_MODE_ONCE, RUN_MODE_SCHEDULE}
-import com.coleji.stockwatcher.task.{CalcEpsTask, FetchDailyOHLCsTask, FetchDividendsTask, FetchFinancialsTask, FetchSplitsTask}
+import com.coleji.stockwatcher.task.{CalcEpsTask, DailySummaryEmailTask, FetchDailyOHLCsTask, FetchDividendsTask, FetchFinancialsTask, FetchSplitsTask}
 import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 
@@ -16,12 +16,17 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 
 	private var taskNextRuntimes: mutable.Map[StockWatcherTask, ZonedDateTime] = mutable.Map(
+		// fetch
 		(FetchFinancialsTask, FetchFinancialsTask.getNextRuntime),
 		(FetchDividendsTask, FetchDividendsTask.getNextRuntime),
 		(FetchSplitsTask, FetchSplitsTask.getNextRuntime),
 		(FetchDailyOHLCsTask, FetchDailyOHLCsTask.getNextRuntime),
 
+		// calc
 		(CalcEpsTask, CalcEpsTask.getNextRuntime),
+
+		// email
+		(DailySummaryEmailTask, ZonedDateTime.now)
 	)
 
 	logger.info("TASK SCHEDULE: ")
