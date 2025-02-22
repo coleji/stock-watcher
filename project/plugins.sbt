@@ -1,5 +1,5 @@
 // The Play plugin
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.9.1") // rel 19 dec 2023
+addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.6") // rel 2024 nov
 
 // web plugins
 
