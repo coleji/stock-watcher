@@ -11,19 +11,15 @@ import java.util.Properties
 object SmtpEmailer {
 	private val logger = LoggerFactory.getLogger(this.getClass.getName)
 	val prop = new Properties
-	prop.setProperty("mail.smtp.auth", "true")
-	prop.setProperty("mail.smtp.starttls.enable", "true")
-	prop.setProperty("mail.smtp.host", "smtp.sendgrid.net")
-	prop.setProperty("mail.smtp.port", "587")
-	prop.setProperty("mail.smtp.ssl.trust", "smtp.sendgrid.net")
+	prop.setProperty("mail.smtp.auth", "false")
+	prop.setProperty("mail.smtp.starttls.enable", "false")
+	prop.setProperty("mail.smtp.port", "25")
 
 	val session = new Initializable[Session]
 
 	def sendEmail(subject: String, body: String)(implicit PA: PermissionsAuthority): Unit = {
-		session.trySet(() => Session.getInstance(prop, new Authenticator {
-			override def getPasswordAuthentication: PasswordAuthentication =
-				new PasswordAuthentication("apikey", PA.customParams.getString("sendgrid-api-key"))
-		}))
+		prop.setProperty("mail.smtp.host", PA.customParams.getString("smtp-host"))
+		session.trySet(() => Session.getInstance(prop))
 
 		val message: Message = new MimeMessage(session.get)
 		message.setFrom(new InternetAddress(PA.customParams.getString("sengrid-from")))

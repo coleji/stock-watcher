@@ -37,6 +37,7 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 	}))
 
 	def start()(implicit PA: PermissionsAuthority): Unit = {
+		SmtpEmailer.sendEmail("Starting app", "Starting app!")
 		var didRun = false
 		val runMode = PA.customParams.getString("task-runner-mode").toInt
 
