@@ -1,12 +1,12 @@
 package com.coleji.neptune.API
 
-import play.api.libs.json.{JsObject, JsPath, Json, JsonValidationError}
+import play.api.libs.json.{Format, JsObject, JsPath, Json, JsonValidationError}
 
 case class ResultError (
 	code: String,
 	message: String
 ) {
-	implicit val format = Json.format[ResultError]
+	implicit val format: Format[ResultError] = Json.format[ResultError]
 	def asJsObject: JsObject = JsObject(Map("error" -> Json.toJson(this)))
 }
 
@@ -15,7 +15,7 @@ case class ParseError(
 	message: String,
 	parseErrors: collection.Seq[(String, collection.Seq[String])]
 ) {
-	implicit val format = Json.format[ParseError]
+	implicit val format: Format[ParseError] = Json.format[ParseError]
 	def asJsObject: JsObject = JsObject(Map("error" -> Json.toJson(this)))
 }
 

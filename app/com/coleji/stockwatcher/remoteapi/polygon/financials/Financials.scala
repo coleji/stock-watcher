@@ -14,8 +14,10 @@ object Financials {
 		var total = 0
 		var ret: List[DtoFinancialsEvent] = List.empty
 		var cursor: Option[String] = Option.empty
+		var firstRun = true
 
-		do {
+		while (cursor.isDefined || firstRun) {
+			firstRun = false
 			cursor.foreach(logger.debug)
 			val rawResult = PolygonApi.callApi(getPath(cursor))
 
@@ -64,7 +66,7 @@ object Financials {
 				}
 			}
 			ct += 1
-		} while (cursor.isDefined)
+		}
 		ret
 	}
 

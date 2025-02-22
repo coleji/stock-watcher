@@ -21,14 +21,14 @@ class DrawableTable(val rows: List[DrawableRow], thickness: Int) extends Drawabl
 
 object DrawableTable {
 	def apply(
-					 cells: List[List[String]],
-					 widths: List[Float],
-					 aligns: List[Alignment],
-					 font: PDFont,
-					 fontSize: Float,
-					 thickness: Int = 1,
-					 padding: Int = 4
-			 ): DrawableTable = {
+		cells: List[List[String]],
+		widths: List[Float],
+		aligns: List[Alignment],
+		font: PDFont,
+		fontSize: Float,
+		thickness: Int = 1,
+		padding: Int = 4
+	): DrawableTable = {
 		val numberColumns = widths.length
 		cells.foreach(c => {
 			if (c.length != numberColumns) throw new Exception("Mismatched # of columns")

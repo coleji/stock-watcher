@@ -32,7 +32,7 @@ extends ColumnAlias[DatabaseField[Option[LocalDate]]](table, field) {
 		}
 	}
 
-	def isDateConstant(date: LocalDate): Filter = dateComparison(date, DATE_=)
+	def isDateConstant(date: LocalDate): Filter = dateComparison(date, DATE_==)
 
 	def greaterThanConstant(date: LocalDate): Filter = dateComparison(date, DATE_>)
 

@@ -1,12 +1,13 @@
 package com.coleji.stockwatcher.entity.entitydefinitions
 
+import com.coleji.neptune.Core.PermissionsAuthority.PersistenceSystem
 import com.coleji.neptune.Storable.FieldValues._
 import com.coleji.neptune.Storable.Fields._
 import com.coleji.neptune.Storable.{FieldsObject, StorableClass, StorableObject, ValuesObject}
 
 import java.time.LocalDate
 
-class PolygonDividend extends StorableClass(PolygonDividend) {
+class PolygonDividend (implicit val persistenceSystem: PersistenceSystem) extends StorableClass(PolygonDividend) {
 	override object values extends ValuesObject {
 		val dividendId = new IntFieldValue(self, PolygonDividend.fields.dividendId)
 		val ticker = new StringFieldValue(self, PolygonDividend.fields.ticker)
@@ -38,10 +39,10 @@ object PolygonDividend extends StorableObject[PolygonDividend] {
 	def primaryKey: IntDatabaseField = fields.dividendId
 
 	def apply(
-		 ticker: String, declarationDate: LocalDate, exDividendDate: LocalDate,
-		 recordDate: LocalDate, payDate: Option[LocalDate], cashAmount: Double,
-		 dividendType: String, frequency: Option[Int]
-	 ): PolygonDividend = {
+		ticker: String, declarationDate: LocalDate, exDividendDate: LocalDate,
+		recordDate: LocalDate, payDate: Option[LocalDate], cashAmount: Double,
+		dividendType: String, frequency: Option[Int]
+	): PolygonDividend = {
 		val ret = new PolygonDividend
 		ret.values.ticker.update(ticker)
 		ret.values.declarationDate.update(declarationDate)

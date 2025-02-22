@@ -93,7 +93,7 @@ class TaskDispatcher @Inject()(lifecycle: ApplicationLifecycle){
 		}
 		if (count % 200 == 0) {
 			taskNextRuntimes.foreach(t => {
-				logger.info(t._2 + " => " + t._1.getClass.getSimpleName)
+				logger.info(t._2.toString + " => " + t._1.getClass.getSimpleName)
 			})
 
 		}

@@ -12,8 +12,10 @@ object Splits {
 		var ct = 1
 		var ret: List[DtoSplitResult] = List.empty
 		var cursor: Option[String] = Option.empty
+		var firstRun = true
 
-		do {
+		while (cursor.isDefined || firstRun) {
+			firstRun = false
 			cursor.foreach(logger.debug)
 			val rawResult = PolygonApi.callApi(getPath(cursor))
 
@@ -41,7 +43,7 @@ object Splits {
 				}
 			}
 			ct += 1
-		} while (cursor.isDefined)
+		}
 		ret
 	}
 

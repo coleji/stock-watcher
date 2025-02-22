@@ -1,13 +1,13 @@
 package com.coleji.stockwatcher.remoteapi.polygon.financials
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{Format, JsValue, Json}
 
 import java.time.{LocalDate, LocalDateTime}
 
 case class DtoFinancial(label: String, order: Int, unit: String, value: Double)
 
 object DtoFinancial {
-	implicit val format = Json.format[DtoFinancial]
+	implicit val format: Format[DtoFinancial] = Json.format[DtoFinancial]
 	def apply(v: JsValue): DtoFinancial = v.as[DtoFinancial]
 }
 
@@ -21,7 +21,7 @@ case class DtoFinancialsComprehensiveIncome(
 )
 
 object DtoFinancialsComprehensiveIncome {
-	implicit val format = Json.format[DtoFinancialsComprehensiveIncome]
+	implicit val format: Format[DtoFinancialsComprehensiveIncome] = Json.format[DtoFinancialsComprehensiveIncome]
 	def apply(v: JsValue): DtoFinancialsComprehensiveIncome = v.as[DtoFinancialsComprehensiveIncome]
 }
 
@@ -45,7 +45,7 @@ case class DtoFinancialsBalanceSheet1(
 )
 
 object DtoFinancialsBalanceSheet1 {
-	implicit val format = Json.format[DtoFinancialsBalanceSheet1]
+	implicit val format: Format[DtoFinancialsBalanceSheet1] = Json.format[DtoFinancialsBalanceSheet1]
 	def apply(v: JsValue): DtoFinancialsBalanceSheet1 = v.as[DtoFinancialsBalanceSheet1]
 }
 
@@ -71,7 +71,7 @@ case class DtoFinancialsBalanceSheet2 (
 )
 
 object DtoFinancialsBalanceSheet2 {
-	implicit val format = Json.format[DtoFinancialsBalanceSheet2]
+	implicit val format: Format[DtoFinancialsBalanceSheet2] = Json.format[DtoFinancialsBalanceSheet2]
 	def apply(v: JsValue): DtoFinancialsBalanceSheet2 = v.as[DtoFinancialsBalanceSheet2]
 }
 
@@ -101,7 +101,7 @@ case class DtoFinancialsIncomeStatement1(
 )
 
 object DtoFinancialsIncomeStatement1 {
-	implicit val format = Json.format[DtoFinancialsIncomeStatement1]
+	implicit val format: Format[DtoFinancialsIncomeStatement1] = Json.format[DtoFinancialsIncomeStatement1]
 	def apply(v: JsValue): DtoFinancialsIncomeStatement1 = v.as[DtoFinancialsIncomeStatement1]
 }
 
@@ -124,7 +124,7 @@ case class DtoFinancialsIncomeStatement2(
 )
 
 object DtoFinancialsIncomeStatement2 {
-	implicit val format = Json.format[DtoFinancialsIncomeStatement2]
+	implicit val format: Format[DtoFinancialsIncomeStatement2] = Json.format[DtoFinancialsIncomeStatement2]
 	def apply(v: JsValue): DtoFinancialsIncomeStatement2 = v.as[DtoFinancialsIncomeStatement2]
 }
 
@@ -147,7 +147,7 @@ case class DtoFinancialsIncomeStatement3(
 )
 
 object DtoFinancialsIncomeStatement3 {
-	implicit val format = Json.format[DtoFinancialsIncomeStatement3]
+	implicit val format: Format[DtoFinancialsIncomeStatement3] = Json.format[DtoFinancialsIncomeStatement3]
 	def apply(v: JsValue): DtoFinancialsIncomeStatement3 = v.as[DtoFinancialsIncomeStatement3]
 }
 
@@ -168,7 +168,7 @@ case class DtoFinancialsCashFlowStatement(
 )
 
 object DtoFinancialsCashFlowStatement {
-	implicit val format = Json.format[DtoFinancialsCashFlowStatement]
+	implicit val format: Format[DtoFinancialsCashFlowStatement] = Json.format[DtoFinancialsCashFlowStatement]
 	def apply(v: JsValue): DtoFinancialsCashFlowStatement = v.as[DtoFinancialsCashFlowStatement]
 }
 
@@ -183,7 +183,7 @@ case class DtoFinancialsGrouping(
 )
 
 object DtoFinancialsGrouping {
-	implicit val format = Json.format[DtoFinancialsGrouping]
+	implicit val format: Format[DtoFinancialsGrouping] = Json.format[DtoFinancialsGrouping]
 	def apply(v: JsValue): DtoFinancialsGrouping = v.as[DtoFinancialsGrouping]
 }
 
@@ -206,7 +206,7 @@ case class DtoFinancialsEvent(
 )
 
 object DtoFinancialsEvent {
-	implicit val format = Json.format[DtoFinancialsEvent]
+	implicit val format: Format[DtoFinancialsEvent] = Json.format[DtoFinancialsEvent]
 	def apply(v: JsValue): DtoFinancialsEvent = v.as[DtoFinancialsEvent]
 }
 
@@ -218,6 +218,6 @@ case class DtoFinancialsApiResult(
 )
 
 object DtoFinancialsApiResult {
-	implicit val format = Json.format[DtoFinancialsApiResult]
+	implicit val format: Format[DtoFinancialsApiResult] = Json.format[DtoFinancialsApiResult]
 	def apply(v: JsValue): DtoFinancialsApiResult = v.as[DtoFinancialsApiResult]
 }

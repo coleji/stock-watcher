@@ -32,7 +32,7 @@ case object ValidationOk extends ValidationResult {
 	override def map(f: ValidationResult => ValidationResult): ValidationResult = f(this)
 	override def combine(vr: ValidationResult): ValidationResult = vr
 	override def isOk = true
-	override def toEither: Either[List[String], Unit] = Right()
+	override def toEither: Either[List[String], Unit] = Right(null)
 }
 
 object ValidationResult {

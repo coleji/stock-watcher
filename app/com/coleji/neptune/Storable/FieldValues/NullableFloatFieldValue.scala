@@ -10,7 +10,7 @@ class NullableFloatFieldValue(instance: StorableClass, @transient fieldInner: Nu
 
 	override def asJSValue: JsValue = super.get match {
 		case None => JsNull
-		case Some(v) => JsNumber(v)
+		case Some(v) => JsNumber(BigDecimal.valueOf(v))
 	}
 
 	override def updateFromJsValue(v: JsValue): Boolean = v match {

@@ -8,15 +8,15 @@ import org.apache.pdfbox.pdmodel.font.PDFont
 import java.awt.Color
 
 class DrawableCell(
-						  val text: String,
-						  val width: Float,
-						  val align: Alignment,
-						  val font: PDFont,
-						  val fontSize: Float,
-						  val thickness: Int,
-						  val padding: Int,
-						  val fixWidth: Boolean = true
-				  ) {
+	val text: String,
+	val width: Float,
+	val align: Alignment,
+	val font: PDFont,
+	val fontSize: Float,
+	val thickness: Int,
+	val padding: Int,
+	val fixWidth: Boolean = true
+) {
 	val stringWidth: Float = width - (2 * (thickness + padding))
 
 	val lines: List[String] = wrapText(text, font, fontSize, stringWidth)

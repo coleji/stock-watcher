@@ -8,7 +8,7 @@ import play.api.libs.json.{JsNull, JsNumber, JsValue}
 class FloatFieldValue(instance: StorableClass, @transient fieldInner: FloatDatabaseField)(implicit persistenceSystem: PersistenceSystem) extends FieldValue[Float](instance, fieldInner) {
 	override def getPersistenceLiteral: (String, List[String]) = GetSQLLiteralPair(super.get)
 
-	override def asJSValue: JsValue = JsNumber(super.get)
+	override def asJSValue: JsValue = JsNumber(BigDecimal.valueOf(super.get))
 
 	override def updateFromJsValue(v: JsValue): Boolean = v match {
 		case n: JsNumber => update(n.value.floatValue)

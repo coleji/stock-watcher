@@ -73,18 +73,18 @@ object AbstractTable {
 	// and render, closing and creating new pages as necessary
 	// TODO: could decouple the logic of figuring out how many pages we need and which abstracts share a page with each other, from actually drawing
 	def doTable(
-					   abstractTables: List[AbstractTable[_]],
-					   drawables: List[MultiDrawableTable],
-					   remainingHeight: Option[Float],
-					   currentPage: Option[ContentStreamDecorator],
-					   left: Float,
-					   top: Float,
-					   marginBetweenReports: Float,
-					   topMargin: Float,
-					   verticalLimit: Float,
-					   newPage: (PDDocument, PDRectangle) => ContentStreamDecorator,
-					   document: PDDocument
-			   ): (Option[ContentStreamDecorator], Option[Float]) = {
+		abstractTables: List[AbstractTable[_]],
+		drawables: List[MultiDrawableTable],
+		remainingHeight: Option[Float],
+		currentPage: Option[ContentStreamDecorator],
+		left: Float,
+		top: Float,
+		marginBetweenReports: Float,
+		topMargin: Float,
+		verticalLimit: Float,
+		newPage: (PDDocument, PDRectangle) => ContentStreamDecorator,
+		document: PDDocument
+	): (Option[ContentStreamDecorator], Option[Float]) = {
 		if (drawables.isEmpty) {
 			if (abstractTables.isEmpty) (currentPage, remainingHeight) //we're done
 			else {
