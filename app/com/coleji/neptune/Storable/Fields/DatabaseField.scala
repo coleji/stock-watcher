@@ -39,6 +39,7 @@ abstract class DatabaseField[T](val entity: StorableObject[_ <: StorableClass], 
 					case d: DoubleDatabaseField => d.alias(ta)
 					case i: IntDatabaseField => i.alias(ta)
 					case s: StringDatabaseField => s.alias(ta)
+					case f: FloatDatabaseField => f.alias(ta)
 
 					case b: NullableBooleanDatabaseField => b.alias(ta)
 					case c: NullableClobDatabaseField => c.alias(ta)
@@ -47,6 +48,7 @@ abstract class DatabaseField[T](val entity: StorableObject[_ <: StorableClass], 
 					case d: NullableDoubleDatabaseField => d.alias(ta)
 					case i: NullableIntDatabaseField => i.alias(ta)
 					case s: NullableStringDatabaseField => s.alias(ta)
+					case f: NullableFloatDatabaseField => f.alias(ta)
 				}
 			}
 			case None => {
@@ -57,6 +59,7 @@ abstract class DatabaseField[T](val entity: StorableObject[_ <: StorableClass], 
 					case d: DoubleDatabaseField => d.alias
 					case i: IntDatabaseField => i.alias
 					case s: StringDatabaseField => s.alias
+					case f: FloatDatabaseField => f.alias
 
 					case b: NullableBooleanDatabaseField => b.alias
 					case c: NullableClobDatabaseField => c.alias
@@ -65,6 +68,7 @@ abstract class DatabaseField[T](val entity: StorableObject[_ <: StorableClass], 
 					case d: NullableDoubleDatabaseField => d.alias
 					case i: NullableIntDatabaseField => i.alias
 					case s: NullableStringDatabaseField => s.alias
+					case f: NullableFloatDatabaseField => f.alias
 				}
 			}
 		}

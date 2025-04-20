@@ -3,6 +3,7 @@ package com.coleji.stockwatcher.endpoints.IngestFidelityActivity
 import com.coleji.neptune.Core.PermissionsAuthority
 import com.coleji.neptune.Util.StringUtil
 import com.coleji.stockwatcher.SmtpEmailer
+import com.coleji.stockwatcher.entity.entitydefinitions.PolygonSplit
 import com.opencsv.{CSVReader, CSVReaderBuilder, RFC4180ParserBuilder}
 import org.apache.hc.client5.http.utils.Hex
 import org.slf4j.LoggerFactory
@@ -23,6 +24,16 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 		logger.info("========================================== starting")
 		val file = req.body.asFile
 		val bytes = (new FileInputStream(file)).readAllBytes().toList
+
+		val excludedSymbols = Set(
+			"SPAXX",
+			"FMILX",
+			"FBGRX",
+			"BGSAX",
+			"PSGAX",
+			"FAGIX",
+			"CPOAX"
+		)
 
 		// drop BOM
 		var s = if (Hex.encodeHexString(bytes.take(3).toArray) == "efbbbf") {
@@ -52,6 +63,8 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 		val rows = rawRows.map(row => {
 			val map = row.zipWithIndex.filter(t => t._2 < 18).map(t => headers(t._2) -> t._1.trim).toMap
 
+//			logger.info(map("Symbol") + " -> " + StringUtil.optionNoEmptyString(map("Symbol").trim()))
+
 			FidelityActivityDto(
 				amountExcluded = StringUtil.optionNoEmptyString(map("Amt Excluded")).flatMap(_.toIntOption),
 				runDate = LocalDate.parse(map("Run Date").trim(), DateTimeFormatter.ofPattern("MM/dd/yyyy")),
@@ -63,6 +76,7 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 				exchangeQuantity = StringUtil.optionNoEmptyString(map("Exchange Quantity")).map(_.toInt),
 				exchangeCurrency = StringUtil.optionNoEmptyString(map("Exchange Currency")),
 				quantity = StringUtil.optionNoEmptyString(map("Quantity")).flatMap(_.toDoubleOption),
+				effectiveQuantity = StringUtil.optionNoEmptyString(map("Quantity")).flatMap(_.toDoubleOption),
 				currency = StringUtil.optionNoEmptyString(map("Currency")),
 				price = StringUtil.optionNoEmptyString(map("Price")).flatMap(_.toDoubleOption),
 				exchangeRate = StringUtil.optionNoEmptyString(map("Exchange Rate")).flatMap(_.toDoubleOption),
@@ -71,7 +85,9 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 				accruedInterest = StringUtil.optionNoEmptyString(map("Accrued Interest")).flatMap(_.toDoubleOption),
 				amount = map("Amount").toDouble,
 				settlementDate = StringUtil.optionNoEmptyString(map("Settlement Date"))
-					.map(d => LocalDate.parse(d, DateTimeFormatter.ofPattern("MM/dd/yyyy")))
+					.map(d => LocalDate.parse(d, DateTimeFormatter.ofPattern("MM/dd/yyyy"))),
+				splitTo = 1f,
+				splitFrom = 1f
 			)
 		})
 
@@ -79,11 +95,32 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 		val sells: mutable.Map[String, List[FidelityActivityDto]] = mutable.Map.empty
 		val tickers: mutable.Set[String] = mutable.Set.empty
 
-		val tickerRegex = "^[A-Z]*[^X]$".r
+		val splits = PA.rootRC.getAllObjectsOfClass(PolygonSplit, Set(
+			PolygonSplit.fields.ticker,
+			PolygonSplit.fields.splitFrom,
+			PolygonSplit.fields.splitTo,
+			PolygonSplit.fields.executionDate,
+		)).foldLeft(mutable.Map[String, List[PolygonSplit]]())((m: mutable.Map[String, List[PolygonSplit]], s: PolygonSplit) => {
+			val ticker = s.values.ticker.get
+			if (!m.contains(ticker)) m(ticker) = List.empty
+			m(ticker) = s :: m(ticker)
+			m
+		})
 
-		rows.reverse/*.filter(_.account.startsWith("Individual"))*/.filter(r => tickerRegex.matches(r.symbol.getOrElse(""))).foreach(r => {
+		rows.reverse/*.filter(_.account.startsWith("Individual"))*/
+		.filter(_.symbol.isDefined)
+		.filter(r => !excludedSymbols.contains(r.symbol.getOrElse("")))
+		.filter(r => r.symbol.get.matches("^\\D.*"))
+		.foreach(r => {
 			val sym = r.symbol.get
 			tickers.add(sym)
+
+			val matchingSplits = splits.getOrElse(r.symbol.get, List.empty).filter(_.values.executionDate.get.isAfter(r.runDate))
+			if (matchingSplits.nonEmpty) logger.info("****************** " + r.symbol.get + " " + matchingSplits.toString())
+			val splitTo = matchingSplits.foldLeft(r.splitTo)((acc, s) => acc * s.values.splitTo.get)
+			val splitFrom = matchingSplits.foldLeft(r.splitFrom)((acc, s) => acc * s.values.splitFrom.get)
+			r.effectiveQuantity = r.quantity.map(q => (q * splitTo) / splitFrom)
+
 			if (
 				r.action.startsWith("YOU BOUGHT") &&
 				r.symbol.nonEmpty
@@ -107,18 +144,17 @@ class IngestFidelityActivityController @Inject()(implicit exec: ExecutionContext
 //			logger.info(sym)
 			val thisBuys = buys.getOrElse(sym, List.empty)
 			val thisSells = sells.getOrElse(sym, List.empty)
-			thisBuys.foreach(dto => {
-				if (dto.amountExcluded.getOrElse(0) > 0) logger.info("Excluded buy (typo)" + dto.toString)
-//				if (dto.symbol.getOrElse("") == "VOO") logger.info("Buy VOO " + dto.runDate + " " + dto.quantity.getOrElse(0d))
-			})
-			thisSells.foreach(dto => {
-				val excluded = dto.amountExcluded.getOrElse(0).toDouble
-				if (excluded > -1*dto.quantity.getOrElse(0d)) logger.info("excluded>sold " + dto.toString)
-//				if (dto.symbol.getOrElse("") == "VOO") logger.info("Sell VOO " + dto.runDate + " " + ((-1 * dto.quantity.getOrElse(0d)) - dto.amountExcluded.getOrElse(0).toDouble))
-//				if (dto.symbol.getOrElse("") == "VOO" &&  dto.amountExcluded.getOrElse(0).toDouble> 0 ) logger.info("Excluded VOO " + dto.runDate + " " + dto.amountExcluded.getOrElse(0).toDouble)
-			})
-			val buyCount = thisBuys.foldLeft(0d)((agg, dto) => agg + dto.quantity.getOrElse(0d))
-			val sellCount = thisSells.foldLeft(0d)((agg, dto) => agg + (-1 * dto.quantity.getOrElse(0d)) - dto.amountExcluded.getOrElse(0).toDouble)
+//			thisBuys.foreach(dto => {
+//				if (dto.amountExcluded.getOrElse(0) > 0) logger.info("Excluded buy (typo)" + dto.toString)
+//				if (dto.symbol.getOrElse("") == "EG") logger.info("Buy EG " + dto.runDate + " " + dto.quantity.getOrElse(0d) + " " + dto.effectiveQuantity.getOrElse(0d))
+//			})
+//			thisSells.foreach(dto => {
+//				val excluded = dto.amountExcluded.getOrElse(0).toDouble
+//				if (excluded > -1*dto.quantity.getOrElse(0d)) logger.info("excluded>sold " + dto.toString)
+//				if (dto.symbol.getOrElse("") == "EG") logger.info("Sell EG " + dto.runDate + " " + ((-1 * dto.quantity.getOrElse(0d)) - dto.amountExcluded.getOrElse(0).toDouble)+ " " + ((-1 * dto.effectiveQuantity.getOrElse(0d)) - dto.amountExcluded.getOrElse(0).toDouble))
+//			})
+			val buyCount = thisBuys.foldLeft(0d)((agg, dto) => agg + dto.effectiveQuantity.getOrElse(0d))
+			val sellCount = thisSells.foldLeft(0d)((agg, dto) => agg + (-1 * dto.effectiveQuantity.getOrElse(0d)) - dto.amountExcluded.getOrElse(0).toDouble)
 			if (sellCount != buyCount) logger.info(sym + ": buys-sells is " + (buyCount-sellCount))
 		})
 

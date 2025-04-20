@@ -15,6 +15,7 @@ case class FidelityActivityDto(
 	exchangeQuantity: Option[Int],
 	exchangeCurrency: Option[String],
 	quantity: Option[Double],
+	var effectiveQuantity: Option[Double],
 	currency: Option[String],
 	price: Option[Double],
 	exchangeRate: Option[Double],
@@ -22,7 +23,9 @@ case class FidelityActivityDto(
 	fees: Option[Double],
 	accruedInterest: Option[Double],
 	amount: Double,
-	settlementDate: Option[LocalDate]
+	settlementDate: Option[LocalDate],
+	splitTo: Float,
+	splitFrom: Float
 ) {
 	def toStorable(): AccountActivity = {
 		val ret = new AccountActivity
